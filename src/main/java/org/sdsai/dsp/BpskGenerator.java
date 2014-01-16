@@ -11,18 +11,34 @@ import javax.sound.sampled.LineUnavailableException;
 
 /**
  * Generate or decode a BPSK signal.
+ *
+ * This operates on 16 bit audio samples.
  */
-public class Bpsk
+public class BpskGenerator
 {
     /**
+     * PSK31 has a symbol rate of 31.25 symbols per second.
      */
     public static final double PSK31_SYMBOLS_PER_SECOND = 31.25;
+
+    /**
+     * Default frequency of the audio tone to use.
+     */
+    public static final double DEFAULT_FREQUENCY = 1000;
+
+    /**
+     * Default sample rate used to generate audio.
+     */
+    public static final int DEFAULT_SAMPLE_RATE = 11025;
 
     /**
      * The target frequency to generate or decode a PSK31 signal on.
      */
     private double hz;
 
+    /**
+     * The audio sample rate. Typically 11025, 22050, or 44100.
+     */
     private int sampleRate;
 
     /**
@@ -35,14 +51,17 @@ public class Bpsk
      */
     private long currentSample;
 
+    /**
+     * The number of radians a single audio sampel represents.
+     */
     private double radiansPerSample;
 
-    private double symbolsPerSecond;
-
     /**
-     * Coefficients that are used to scale the start of a new symbol.
+     * The rate that symbols are generated per second.
+     *
+     * This is used to compute how many samples to populate to represent a symbol.
      */
-    private double[] symbolStartFilter;
+    private double symbolsPerSecond;
 
     /**
      * How many samples are required to encode a symbole?
@@ -52,17 +71,31 @@ public class Bpsk
     /**
      * Coefficients that are used to scale the start of a new symbol.
      */
+    private double[] symbolStartFilter;
+
+    /**
+     * Coefficients that are used to scale the start of a new symbol.
+     */
     private double[] symbolEndFilter;
 
-    public Bpsk() {
-        this(1000, 11000, PSK31_SYMBOLS_PER_SECOND);
+    /**
+     * Build an instance with sensible defaults.
+     */
+    public BpskGenerator() {
+        this(DEFAULT_FREQUENCY, DEFAULT_SAMPLE_RATE, PSK31_SYMBOLS_PER_SECOND);
     }
 
-    public Bpsk(final double hz, final int sampleRate) {
+    /**
+     * Constructor.
+     *
+     * @param hz Frequency of carrier.
+     * @param sampleRate The rate at which the signal is generated or recieved.
+     */
+    public BpskGenerator(final double hz, final int sampleRate) {
         this(hz, sampleRate, PSK31_SYMBOLS_PER_SECOND);
     }
 
-    public Bpsk(final double hz, final int sampleRate, double symbolsPerSecond) {
+    public BpskGenerator(final double hz, final int sampleRate, double symbolsPerSecond) {
         this.hz               = hz;
         this.sampleRate       = sampleRate;
         this.symbolsPerSecond = symbolsPerSecond;
@@ -170,6 +203,10 @@ public class Bpsk
         fade(buffer, sample, symbolEndFilter);
     }
 
+    public byte[] generateSignal(final byte[] symbols) throws IOException {
+        return generateSignal(symbols, 0, symbols.length);
+    }
+
     /**
      * Given an array of 1s or 0s this will generate a PSK audio array.
      *
@@ -178,14 +215,14 @@ public class Bpsk
      * @throws IOException if a value in {@param symbols} is not a 1 or 0.
      * @return Array representing and audio segment of modulated PSK.
      */
-    public byte[] generateSignal(final int[] symbols) throws IOException {
+    public byte[] generateSignal(final byte[] symbols, final int off, final int len) throws IOException {
 
-        if (symbols.length == 0 ) {
+        if (len == 0 ) {
             return new byte[0];
         }
 
         /* How many audio samples must we generate? */
-        final int    samples = (int)(symbols.length * (int)samplesPerSymbol);
+        final int    samples = (int)(len * (int)samplesPerSymbol);
 
         /* We generate 16 bit audio, so there are 2 bytes per sample. */
         final byte[] buffer  = new byte[2 * samples];
@@ -196,9 +233,9 @@ public class Bpsk
 
         sample = generateSignal(buffer, sample, shift);
 
-        for (int sym_i = 1; sym_i < symbols.length; ++sym_i) {
+        for (int sym_i = 1; sym_i < len; ++sym_i) {
 
-            final int symbol = symbols[sym_i];
+            final byte symbol = symbols[off+sym_i];
             if (symbol == 0) {
                 shift = (shift == 0) ? Math.PI : 0;
 
@@ -225,10 +262,12 @@ public class Bpsk
         return buffer;
     }
 
+
     /**
      * Return the audio format this class generates.
      */
     AudioFormat getAudioFormat() {
+        /* Do not change this. This class produces big-endian 16bit signed audio. */
         return new AudioFormat(sampleRate, 16, 1, true, true);
     }
 
