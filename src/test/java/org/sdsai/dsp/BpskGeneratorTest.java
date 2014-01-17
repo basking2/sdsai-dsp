@@ -13,7 +13,7 @@ public class BpskGeneratorTest {
     @Test
     @Ignore
     public void playArray() throws LineUnavailableException, IOException {
-        BpskGenerator p = new BpskGenerator(1000, 22000);
+        BpskGenerator p = new BpskGenerator(1000, 44100);
 
         SourceDataLine sdl = AudioSystem.getSourceDataLine(p.getAudioFormat());
 
@@ -55,23 +55,9 @@ public class BpskGeneratorTest {
         byte[] testPattern = new byte[]{1,0,1,1,0,0,0,1,0};
         byte[] b = p1.generateSignal(testPattern);
 
-        /* Add some white noise. */
-        for (int i = 0; i < b.length/2; i++) {
+        addWhiteNoise(b, 0.5);
 
-            short s1 = (short)(((b[2*i] << 8) & 0xff00) | (b[2*i+1] & 0xff));
-            short s2 = (short)((Short.MAX_VALUE / 2) * Math.random());
-            if (Math.random() > .5) {
-                s1 += s2;
-            }
-            else {
-                s1 -= s2;
-            }
-
-            b[2*i] = (byte)((s1>>8)&0xff);
-            b[2*i+1] = (byte)((s1)&0xff);
-        }
-
-        byte[] checkPattern = p2.detectSignal(b, 0, b.length);
+        byte[] checkPattern = p2.detectSignal(b);
 
         Assert.assertArrayEquals(testPattern, checkPattern);
     }
@@ -82,39 +68,20 @@ public class BpskGeneratorTest {
         BpskDetector p2 = new BpskDetector();
 
         /* First value is a dummy value. */
-        byte[] testPattern = new byte[]{1,0,1,1,0,0,0,1};
+        byte[] testPattern = new byte[]{1,0,0,0,1,0,1,1,0,0,0,1};
         byte[] b = p1.generateSignal(testPattern);
 
-        /* Add some white noise. */
-        for (int i = 0; i < b.length/2; i++) {
+        addWhiteNoise(b, 0.5);
 
-            short s1 = (short)(((b[2*i] << 8) & 0xff00) | (b[2*i+1] & 0xff));
-            short s2 = (short)((Short.MAX_VALUE / 2) * Math.random());
-            if (Math.random() > .5) {
-                s1 += s2;
-            }
-            else {
-                s1 -= s2;
-            }
+        b = prefixWithSilence(b, 0.333);
 
-            b[2*i] = (byte)((s1>>8)&0xff);
-            b[2*i+1] = (byte)((s1)&0xff);
-        }
+        byte[] checkPattern = p2.detectSignal(b);
 
-        /* Shift b with some zero audio. */
-        byte[] b2 = new byte[(b.length / testPattern.length / 3)+b.length];
-        for (int i = 1; i <= b.length; i++) {
-            b2[b2.length-i] = b[b.length-i];
-        }
-        b = b2;
-
-        byte[] checkPattern = p2.detectSignal(b, 0, b.length);
-
-        printArrays("1", testPattern, checkPattern);
+        printArrays("encodeDecodeWithNoiseAndShift1", testPattern, checkPattern);
 
         /* Ignore the last character as it's stuck in the buffer due to phase shift. */
         for (int i = 0; i < testPattern.length-1; ++i) {
-            Assert.assertEquals(testPattern[i], checkPattern[i]);
+            Assert.assertEquals(testPattern[i], checkPattern[i+4]);
         }
     }
 
@@ -126,20 +93,17 @@ public class BpskGeneratorTest {
         byte[] testPattern = new byte[]{1,0,1,1,0,0,0,1,0,1,0,1,1,0,0,1};
         byte[] b = p1.generateSignal(testPattern);
 
-        /* Shift b with some zero audio. */
-        byte[] b2 = new byte[(b.length / testPattern.length / 2)+b.length];
-        for (int i = 1; i <= b.length; i++) {
-            b2[b2.length-i] = b[b.length-i];
-        }
-        b = b2;
+        addWhiteNoise(b, 0.5);
 
-        byte[] checkPattern = p2.detectSignal(b, 0, b.length);
+        b = prefixWithSilence(b, 0.5);
 
-        printArrays("2", testPattern, checkPattern);
+        byte[] checkPattern = p2.detectSignal(b);
+
+        printArrays("encodeDecodeWithNoiseAndShift2", testPattern, checkPattern);
 
         /* Ignore the last character as it's stuck in the buffer due to phase shift. */
         for (int i = 0; i < testPattern.length-1; ++i) {
-            Assert.assertEquals(testPattern[i], checkPattern[i+1]);
+            Assert.assertEquals(testPattern[i], checkPattern[i+8]);
         }
     }
 
@@ -161,5 +125,36 @@ public class BpskGeneratorTest {
             }
         }
         System.out.println("---- end "+name+"----");
+    }
+
+    private static byte[] addWhiteNoise(final byte[] b, final double p) {
+        /* Add some white noise. */
+        for (int i = 0; i < b.length/2; i++) {
+
+            short s1 = (short)(((b[2*i] << 8) & 0xff00) | (b[2*i+1] & 0xff));
+            short s2 = (short)(Short.MAX_VALUE * p * Math.random());
+
+            if (Math.random() > .5) {
+                s1 += s2;
+            }
+            else {
+                s1 -= s2;
+            }
+
+            b[2*i] = (byte)((s1>>8)&0xff);
+            b[2*i+1] = (byte)((s1)&0xff);
+        }
+
+        return b;
+    }
+
+    private byte[] prefixWithSilence(final byte[] b, final double p) {
+        byte[] b2 = new byte[(int)(b.length * p + b.length)];
+
+        for (int i = 1; i <= b.length; i++) {
+            b2[b2.length-i] = b[b.length-i];
+        }
+
+        return b2;
     }
 }

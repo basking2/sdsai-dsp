@@ -305,6 +305,11 @@ public class BpskOutputStream extends FilterOutputStream {
         out.write(psk.generateSignal(CHARACTER_SEPARATOR));
     }
 
+    @Override
+    public void write(byte[] b) throws IOException {
+        write(b, 0, b.length);
+    }
+
     /**
      * @{inheritDoc}
      */

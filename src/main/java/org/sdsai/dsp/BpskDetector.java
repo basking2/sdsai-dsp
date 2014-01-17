@@ -95,6 +95,10 @@ public class BpskDetector {
         this.checkBuffer   = new short[samplesPerSymbol];
     }
 
+    public double getSymbolRate() {
+        return this.symbolsPerSecond;
+    }
+
     /**
      * Given a 16bit, big endian, signed audio sample, conver it to short[].
      */
@@ -213,6 +217,10 @@ public class BpskDetector {
         catch (final IOException t) {
             return null;
        }
+    }
+
+    public byte[] detectSignal(final byte[] data) {
+        return detectSignal(data, 0, data.length);
     }
 
     /**

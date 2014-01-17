@@ -29,7 +29,7 @@ public class BpskGenerator
     /**
      * Default sample rate used to generate audio.
      */
-    public static final int DEFAULT_SAMPLE_RATE = 11025;
+    public static final int DEFAULT_SAMPLE_RATE = 44100;
 
     /**
      * The target frequency to generate or decode a PSK31 signal on.
@@ -112,6 +112,10 @@ public class BpskGenerator
             symbolStartFilter[i] = Math.sin(i * Math.PI / this.samplesPerSymbol);
             symbolEndFilter[i]   = Math.cos(i * Math.PI / this.samplesPerSymbol);
         }
+    }
+
+    public double getSymbolRate() {
+        return this.symbolsPerSecond;
     }
 
     /**
