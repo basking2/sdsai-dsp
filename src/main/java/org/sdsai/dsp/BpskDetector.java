@@ -64,15 +64,39 @@ public class BpskDetector {
      * The count of the samples currently making up the last reported symbol.
      *
      * When this exceeds samplesPerSymbol a 1 is reported and this is set to 0.
+     *
+     * This is also used to compute a {@link #checkShift}.
      */
     private int sampleCount;
 
-    private int delay;
+    /**
+     * Shift up when the next set of samples will be checked.
+     *
+     * When a phase inversion is detected, we have the opportunity to more cleanly
+     * center the ring buffer, {@link #buffer}, on the symbols we are recieving.
+     * This re-centering is done when a phase inversion is observed and it is
+     * determined that the zero symbol is leaving the current frame. If the zero symbol
+     * is partly out of our frame, then we can check the next symbol
+     * slightly earlier because it will be fully contained in the buffer slightly earlier.
+     *
+     * We choose to only accelerate checks. We do not delay checks because it is
+     * significantly more complex to distinguish between a delayed check and
+     * not confuse it with re-checking the symbol that caused the delay.
+     */
+    private int checkShift;
 
+    /**
+     * How many audio samples are gathered for each PSK symbol.
+     */
     private int samplesPerSymbol;
 
     /**
      * Constructor with sensible defaults.
+     * <ul>
+     * <li>{@link BpskGenerator#DEFAULT_FREQUENCY}</li>
+     * <li>{@link BpskGenerator#DEFAULT_SAMPLE_RATE}</li>
+     * <li>{@link BpskGenerator#PSK31_SYMBOLS_PER_SECOND}</li>
+     * </ul>
      */
     public BpskDetector() {
         this(
@@ -81,22 +105,24 @@ public class BpskDetector {
             BpskGenerator.PSK31_SYMBOLS_PER_SECOND);
     }
 
+    /**
+     * Constructor.
+     * @param hz Frequency of the detected tone.
+     * @param sampleRate The audio sample rate.
+     * @param symbolsPerSecond How many symbols per second. For PSK31 this is {@link BpskGenerator#PSK31_SYMBOLS_PER_SECOND}.
+     */
     public BpskDetector(final double hz, final int sampleRate, final double symbolsPerSecond) {
         this.hz                 = hz;
         this.sampleRate         = sampleRate;
         this.symbolsPerSecond   = symbolsPerSecond;
         this.samplesPerCycle    = sampleRate/hz;
         this.samplesPerSymbol   = (int)(this.sampleRate / this.symbolsPerSecond);
-        this.delay = 0;
+        this.checkShift = 0;
 
         /* sampleRate / hz = number of samples for 1 full cycle of the wave. */
         this.buffer        = new short[samplesPerSymbol * 2];
         this.bufferIdx     = 0;
         this.checkBuffer   = new short[samplesPerSymbol];
-    }
-
-    public double getSymbolRate() {
-        return this.symbolsPerSecond;
     }
 
     /**
@@ -124,7 +150,8 @@ public class BpskDetector {
      * @param int The length of data to operate on.
      * @param os Output stream that bytes are written too as they are detected.
      *
-     * @return An array of 1's and 0's representing the signal recieved.
+     * @return A squence of 1 and 0 symbols detected from the given audio data. Note that
+     *         partially detected signals may be internally buffered and not necessarily returned.
      */
     public void detectSignal(final byte[] data, final int off, final int len, final OutputStream os) throws IOException {
 
@@ -143,7 +170,7 @@ public class BpskDetector {
             }
 
             /* Every 1/2 buffer fill, check for an inversion. */
-            if ((2 * (bufferIdx+delay)) % buffer.length == 0) {
+            if ((2 * (bufferIdx+checkShift)) % buffer.length == 0) {
 
                 double avgAmplitude = 0.0;
 
@@ -186,10 +213,10 @@ public class BpskDetector {
                     /* More left zeros means a departing inversion. Accelerate next check. */
                     if (leftZeros > rightZeros && leftZeros >= rightZeros * 2) {
                         sampleCount = samplesPerSymbol - (leftZeros + rightZeros);
-                        delay += sampleCount;
+                        checkShift += sampleCount;
                     }
                     /* More right zeros means an incoming inversion.
-                     * Our modulo math does not allow us to delay a check,
+                     * Our modulo math does not allow us to checkShift a check,
                      * we can only accelerate them. */
                     else {
                         sampleCount = (leftZeros + rightZeros);
@@ -205,6 +232,16 @@ public class BpskDetector {
         }
     }
 
+    /**
+     * Detect a signal.
+     *
+     * @param data The audio data.
+     * @param off Offset into data at which to start detecting a signal.
+     * @param len The length from offset.
+     *
+     * @return A squence of 1 and 0 symbols detected from the given audio data. Note that
+     *         partially detected signals may be internally buffered and not necessarily returned.
+     */
     public byte[] detectSignal(final byte[] data, final int off, final int len) {
         try
         {
@@ -219,6 +256,14 @@ public class BpskDetector {
        }
     }
 
+    /**
+     * Detect a signal on audio data.
+     *
+     * @param data Audio data.
+     *
+     * @return A squence of 1 and 0 symbols detected from the given audio data. Note that
+     *         partially detected signals may be internally buffered and not necessarily returned.
+     */
     public byte[] detectSignal(final byte[] data) {
         return detectSignal(data, 0, data.length);
     }
@@ -229,5 +274,13 @@ public class BpskDetector {
     AudioFormat getAudioFormat() {
         /* Do not change this. This class expects to decode big-endian 16bit signed audio. */
         return new AudioFormat(sampleRate, 16, 1, true, true);
+    }
+
+
+    /**
+     * Return the number of PSK symbols per second.
+     */
+    public double getSymbolRate() {
+        return this.symbolsPerSecond;
     }
 }
