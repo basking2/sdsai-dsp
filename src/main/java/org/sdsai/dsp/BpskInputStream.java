@@ -16,10 +16,13 @@ import java.util.Arrays;
  */
 public class BpskInputStream extends FilterInputStream {
 
+    /**
+     * The fill of {@link #symbolBuffer}.
+     */
     private int symbolBufferFill;
 
     /**
-     * The offset into the symbolBuffer list.
+     * The offset into the {@link #symbolBuffer} list.
      */
     private int symbolBufferOff;
 
@@ -29,11 +32,28 @@ public class BpskInputStream extends FilterInputStream {
      * turned into symbols. It is always at a minimum-fill level.
      */
     private byte[] dataBuffer;
+
+    /**
+     * Buffer holding symbols which will eventually be matched to character in varicode and returned.
+     */
     private byte[] symbolBuffer;
+
+    /**
+     * The detector to use to decode varicode symbols.
+     */
     private BpskDetector psk;
+
+    /**
+     * An special output stream that fills {@link #symbolBuffer}.
+     */
     private SymbolBufferOutputStream bufferFiller;
 
-    private static final CharsetTree charsetTree = new CharsetTree(-1, 0);
+    private static final CharsetTree CHARSETTREE = new CharsetTree(-1, 0);
+
+    /**
+     * The longest character sequence, not counting the two terminating 00 bytes.
+     * This is computed at class load time when {@link #CHARSETTREE}.
+     */
     private static final int LONGEST_CHARACTER;
 
     static {
@@ -41,7 +61,7 @@ public class BpskInputStream extends FilterInputStream {
 
         for (int i = 0; i < BpskOutputStream.CHARSET.length; ++i) {
             if (BpskOutputStream.CHARSET[i] != null) {
-                charsetTree.addChar(i, BpskOutputStream.CHARSET[i]);
+                CHARSETTREE.addChar(i, BpskOutputStream.CHARSET[i]);
                 if (longestCharacter < BpskOutputStream.CHARSET[i].length) {
                     longestCharacter = BpskOutputStream.CHARSET[i].length;
                 }
@@ -51,6 +71,11 @@ public class BpskInputStream extends FilterInputStream {
         LONGEST_CHARACTER = longestCharacter;
     }
 
+    /**
+     * A tree representing a Varicode dictionary.
+     *
+     * This class is used to lookup potential matches to varicode symbol strings.
+     */
     private static class CharsetTree {
 
         /**
@@ -75,6 +100,14 @@ public class BpskInputStream extends FilterInputStream {
          * consumed by a successful match.
          */
         public final int depth;
+
+        /**
+         * Constructor.
+         *
+         * @param c The character this node will represent. -1 for no character.
+         * @param depth The legth of the sequence, also the depth in the
+         *        tree that this character resides at.
+         */
         public CharsetTree(
             final int c,
             final int depth
@@ -89,6 +122,11 @@ public class BpskInputStream extends FilterInputStream {
         /**
          * Add a new character to this tree at the given path.
          *
+         * @param c The character. Use -1 to indicate no character, such as in the case
+         *        of an intermediate node.
+         * @param path A sequcne of 0s (left) and 1s (right) path selection choices that define
+         *        where this character is placed in the tree. This character's depth is set to
+         *        path.length.
          * @throws IllegalArgumentException if a path element is not 1 or 0 or
          *         if the character is already defined.
          */
@@ -127,6 +165,9 @@ public class BpskInputStream extends FilterInputStream {
          *        subtree and a value of 1 goes down the right subtree.
          *        Any other value results in an IllegalArgumentException being
          *        thrown.
+         * @param off Offset into path.
+         * @param len The lenth of character to consider in path.
+         *
          * @throws IllegalArgumentException if an element in path is not 0 or 1.
          * @return The CharsetTree of the longest match. If no part of the path matched, this
          *         is returned.
@@ -162,6 +203,10 @@ public class BpskInputStream extends FilterInputStream {
         }
     }
     /**
+     * Constructor.
+     *
+     * @param in {@link InputStream} to read audio data from.
+     * @param psk Ths detector to use to detect a signal in {@code in}.
      */
     public BpskInputStream(final InputStream in, final BpskDetector psk) {
         super(in);
@@ -247,10 +292,13 @@ public class BpskInputStream extends FilterInputStream {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int read() throws IOException {
 
-        CharsetTree ct = charsetTree;
+        CharsetTree ct = CHARSETTREE;
         int bytesRead = 0;
 
         while (true) {
@@ -266,10 +314,10 @@ public class BpskInputStream extends FilterInputStream {
             }
 
             /* Search for a matching character. */
-            ct = charsetTree.findChar(symbolBuffer, symbolBufferOff, symbolBufferFill-symbolBufferOff);
+            ct = CHARSETTREE.findChar(symbolBuffer, symbolBufferOff, symbolBufferFill-symbolBufferOff);
 
             /* Take action based on the match. */
-            if (ct == charsetTree) {
+            if (ct == CHARSETTREE) {
                 /* An unknown character was recieved. Skip 1 symbol and try again. */
                 symbolBufferOff++;
             }
@@ -292,12 +340,17 @@ public class BpskInputStream extends FilterInputStream {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int read(final byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
-    @Override
+    /**
+     * {@inheritDoc}
+     */    @Override
     public int read(final byte[] b, int off, int len) throws IOException {
 
         for (int i = off; i < off+len; ++i ){
@@ -338,7 +391,7 @@ public class BpskInputStream extends FilterInputStream {
     public void validateTree() {
         for (int i = 0; i < BpskOutputStream.CHARSET.length; ++i) {
             if (BpskOutputStream.CHARSET[i] != null) {
-                CharsetTree ct = charsetTree.findChar(
+                CharsetTree ct = CHARSETTREE.findChar(
                         BpskOutputStream.CHARSET[i],
                         0,
                         BpskOutputStream.CHARSET[i].length);

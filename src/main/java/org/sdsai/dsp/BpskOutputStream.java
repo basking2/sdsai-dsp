@@ -297,7 +297,7 @@ public class BpskOutputStream extends FilterOutputStream {
     }
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public void write(int b) throws IOException {
@@ -311,7 +311,7 @@ public class BpskOutputStream extends FilterOutputStream {
     }
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {

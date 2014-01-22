@@ -107,6 +107,7 @@ public class BpskDetector {
 
     /**
      * Constructor.
+     *
      * @param hz Frequency of the detected tone.
      * @param sampleRate The audio sample rate.
      * @param symbolsPerSecond How many symbols per second. For PSK31 this is {@link BpskGenerator#PSK31_SYMBOLS_PER_SECOND}.
@@ -147,13 +148,14 @@ public class BpskDetector {
      *
      * @param data Raw audio data.
      * @param off The offset into the buffer to operate on.
-     * @param int The length of data to operate on.
+     * @param len The length of data to operate on.
      * @param os Output stream that bytes are written too as they are detected.
      *
-     * @return A squence of 1 and 0 symbols detected from the given audio data. Note that
-     *         partially detected signals may be internally buffered and not necessarily returned.
+     * @throws IOException on IO errors when populating various internal buffers.
      */
-    public void detectSignal(final byte[] data, final int off, final int len, final OutputStream os) throws IOException {
+    public void detectSignal(final byte[] data, final int off, final int len, final OutputStream os)
+    throws IOException
+    {
 
         short samples[];
 
@@ -270,15 +272,18 @@ public class BpskDetector {
 
     /**
      * Return the audio format this class generates.
+     *
+     * @return the audio format this class generates.
      */
     AudioFormat getAudioFormat() {
         /* Do not change this. This class expects to decode big-endian 16bit signed audio. */
         return new AudioFormat(sampleRate, 16, 1, true, true);
     }
 
-
     /**
      * Return the number of PSK symbols per second.
+     *
+     * @return the number of PSK symbols per second.
      */
     public double getSymbolRate() {
         return this.symbolsPerSecond;
