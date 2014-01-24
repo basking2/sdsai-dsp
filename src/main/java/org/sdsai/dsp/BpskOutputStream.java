@@ -3,6 +3,7 @@ package org.sdsai.dsp;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.FilterOutputStream;
+import java.util.Arrays;
 
 /**
  * BPSK encoder with a varaible carrier frequency and symbol rate.
@@ -342,11 +343,37 @@ public class BpskOutputStream extends FilterOutputStream {
         out.write(finalData, 0, finalData.length);
     }
 
-    public void preamble() throws IOException {
-        out.write(psk.generateSignal(new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}));
+    /**
+     * Send the preamble.
+     *
+     * This is a series of zeros indtended to allow recievers to syncrhoinize
+     * with the signal.
+     *
+     * @param length The number of signals to send.
+     *
+     * @throws IOException on error.
+     */
+    public void preamble(final int length) throws IOException {
+        final byte[] signal = new byte[length];
+
+        out.write(psk.generateSignal(signal));
     }
 
-    public void postamble() throws IOException {
-        out.write(psk.generateSignal(new byte[]{0,0,1,1,1,1,1,1,1,1,1,1}));
+    /**
+     * Send the postamble.
+     *
+     * This is a series of zeros indtended to allow recievers stop
+     * attempting to decode signals.
+     *
+     * @param length The number of signals to send.
+     *
+     * @throws IOException on error.
+     */
+    public void postamble(final int length) throws IOException {
+        final byte[] signal = new byte[length];
+
+        Arrays.fill(signal, (byte)1);
+
+        out.write(psk.generateSignal(signal));
     }
 }
