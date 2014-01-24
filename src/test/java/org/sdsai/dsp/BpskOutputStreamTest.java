@@ -20,9 +20,9 @@ public class BpskOutputStreamTest {
         final SourceDataLine        sdl  = AudioSystem.getSourceDataLine(psk.getAudioFormat());
         final BpskOutputStream      os   = new BpskOutputStream(baos, psk);
 
-        os.preamble();
+        os.preamble(10);
         os.write("This is a very nice test.".getBytes());
-        os.postamble();
+        os.postamble(10);
         os.close();
 
         sdl.open(psk.getAudioFormat());
