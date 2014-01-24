@@ -128,27 +128,6 @@ public class BpskGeneratorTest {
 
     }
 
-    @Test
-    public void encodeDecode10000Hz1000SymRate() throws IOException {
-        final BpskGenerator gen = new BpskGenerator(10000, 44100, 1000);
-        final BpskDetector det = new BpskDetector(10000, 44100, 1000);
-
-        final byte[] testPattern = new byte[]{1,0,1,0,1,0,1,0,1,1,0,0,0,1,0,1,0,1,1,0,0,1};
-        final byte[] sig = prefixWithSilence(
-            addWhiteNoise(
-                gen.generateSignal(testPattern), 0.5), 0.5);
-
-        final byte[] checkPattern = det.detectSignal(sig);
-
-        printArrays("encodeDecode10000Hz1000SymRate", testPattern, checkPattern);
-
-        /* Ignore the last character as it's stuck in the buffer due to phase shift. */
-        for (int i = 0; i < testPattern.length-1; ++i) {
-            Assert.assertEquals(testPattern[i], checkPattern[i+11]);
-        }
-
-    }
-
     private void printArrays(String name, byte[] expect, byte[] test) {
         System.out.println("----"+name+"----");
         for (int i = 0; i < Math.max(expect.length, test.length); i++) {
