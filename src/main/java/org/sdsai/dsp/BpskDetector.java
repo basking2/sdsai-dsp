@@ -91,6 +91,11 @@ public class BpskDetector {
     private int samplesPerSymbol;
 
     /**
+     * The size of a single sample is currently always 2 bytes.
+     */
+    private static final int sampleSize = 16;
+
+    /**
      * Constructor with sensible defaults.
      * <ul>
      * <li>{@link BpskGenerator#DEFAULT_FREQUENCY}</li>
@@ -277,7 +282,7 @@ public class BpskDetector {
      */
     AudioFormat getAudioFormat() {
         /* Do not change this. This class expects to decode big-endian 16bit signed audio. */
-        return new AudioFormat(sampleRate, 16, 1, true, true);
+        return new AudioFormat(sampleRate, sampleSize, 1, true, true);
     }
 
     /**
@@ -288,4 +293,18 @@ public class BpskDetector {
     public double getSymbolRate() {
         return this.symbolsPerSecond;
     }
+
+    /**
+     * Return the size of a single audio frame.
+     *
+     * An audio frame is one sample * the number of channels. There is 1 channel in PSK
+     * so this is the byte width of that single channel.
+     */
+    public int getFrameSize(){ return sampleSize/8; }
+
+    /**
+     * Return the sample rate.
+     * @return The sample rate.
+     */
+    public int getSampleRate() { return sampleRate; }
 }

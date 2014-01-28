@@ -212,8 +212,8 @@ public class BpskInputStream extends FilterInputStream {
         super(in);
         this.symbolBuffer     = new byte[100];
         this.dataBuffer       = new byte[(int) (
-                psk.getAudioFormat().getFrameSize() *
-                (double)psk.getAudioFormat().getSampleRate() /
+                (double)psk.getFrameSize() *
+                (double)psk.getSampleRate() /
                 psk.getSymbolRate()
             )];
         this.symbolBufferFill = 0;
@@ -404,5 +404,15 @@ public class BpskInputStream extends FilterInputStream {
                 }
             }
         }
+    }
+
+    /**
+     * The size of the internal buffer used to collect data.
+     *
+     * For best performance an audio provider should provide
+     * about this much data, in bytes, to optimize throughput.
+     */
+    public int getBufferSize() {
+        return dataBuffer.length;
     }
 }
