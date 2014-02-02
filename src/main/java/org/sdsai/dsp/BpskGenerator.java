@@ -165,7 +165,7 @@ public class BpskGenerator
 
             short s = (short) (Short.MAX_VALUE * 0.8 * amplitude);
 
-            buffer[2*sample] = (byte) ((s >> 8) & 0xff);
+            buffer[2*sample] = (byte) ((s >>> 8) & 0xff);
             buffer[2*sample+1] = (byte) ((s) & 0xff);
             sample++;
         }
@@ -189,7 +189,7 @@ public class BpskGenerator
 
             s = (short)((double)s * filter[i]);
 
-            buffer[buf_i] = (byte)((s>>8)&0xff);
+            buffer[buf_i] = (byte)((s>>>8)&0xff);
             buffer[buf_i+1] = (byte)((s)&0xff);
         }
     }

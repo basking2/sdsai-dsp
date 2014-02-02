@@ -350,7 +350,8 @@ public class BpskInputStream extends FilterInputStream {
 
     /**
      * {@inheritDoc}
-     */    @Override
+     */
+    @Override
     public int read(final byte[] b, int off, int len) throws IOException {
 
         for (int i = off; i < off+len; ++i ){
