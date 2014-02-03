@@ -48,6 +48,36 @@ public class BpskGeneratorTest {
     }
 
     @Test
+    public void encodeDecodeAudioSkewUp() throws IOException {
+        BpskGenerator p1 = new BpskGenerator();
+        BpskDetector p2 = new BpskDetector();
+
+        byte[] testPattern = new byte[]{1,0,1,1,0,0,0,1};
+        byte[] b = p1.generateSignal(testPattern);
+        for (int i = 0; i < b.length; ++i){
+            b[i] += 128;
+        }
+        byte[] checkPattern = p2.detectSignal(b, 0, b.length);
+
+        Assert.assertArrayEquals(testPattern, checkPattern);
+    }
+
+    @Test
+    public void encodeDecodeAudioSkewDown() throws IOException {
+        BpskGenerator p1 = new BpskGenerator();
+        BpskDetector p2 = new BpskDetector();
+
+        byte[] testPattern = new byte[]{1,0,1,1,0,0,0,1};
+        byte[] b = p1.generateSignal(testPattern);
+        for (int i = 0; i < b.length; ++i){
+            b[i] -= 128;
+        }
+        byte[] checkPattern = p2.detectSignal(b, 0, b.length);
+
+        Assert.assertArrayEquals(testPattern, checkPattern);
+    }
+
+    @Test
     public void encodeDecodeWithNoise() throws IOException {
         BpskGenerator p1 = new BpskGenerator();
         BpskDetector p2 = new BpskDetector();

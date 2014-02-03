@@ -181,24 +181,54 @@ public class BpskDetector {
 
                 double avgAmplitude = 0.0;
 
+                /* Average value of all samples in a wave form. In a perfect wave, this should
+                 * be zero. With some audio equipment, this can vary. This is used to
+                 * re-center the received wave form around zero. */
+                double avg = 0.0;
+
                 /* How many zeros were detected. 50% or more is a phase inversion. */
                 int leftZeros = 0;
                 int rightZeros = 0;
 
-                /* Write the entire checkBuffer as a combination of the two
-                 * halves of buffer, starting at bufferIdx and
-                 * bufferIdx+checkBuffer.length.
+                /* Recenter wave form. */
+                /* TODO - make this happen less frequently. It shouldn't change too much. */
+                for (int i = 0; i < buffer.length; ++i) {
+                    avg += (double)(buffer[i] / buffer.length);
+                }
+
+                /* This loop does a few things.
+                 * 1. The last step is to collude (add) the two halves of the wave form stored in
+                 *    buffer into a wave form that is 1/2 the length of buffer named checkBuffer.
+                 *    The checkBuffer is analyzed for phase inversion.
+                 * 2. Re-center buffer around the variable `avg`. This is the first goal
+                 *    accomplished in the loop.
+                 * 3. Partially compute the average amplitude. This is done afer
+                 *    recentering `buffer` around `average`.
+                 *
                  * We could allocate checkBuffer here, but putting it in the
                  * class allows us to avoid asking for memory. It's a performance
                  * choice. */
                 for (int chkBufIdx = 0; chkBufIdx < checkBuffer.length; ++chkBufIdx) {
 
-                    short v1 = buffer[(bufferIdx + chkBufIdx) % buffer.length];
-                    short v2 = buffer[(bufferIdx + chkBufIdx + buffer.length/2) % buffer.length];
+                    final int v1_idx = (bufferIdx + chkBufIdx) % buffer.length;
+                    final int v2_idx = (bufferIdx + chkBufIdx + buffer.length/2) % buffer.length;
 
-                    // FIXME - move this to a weight moving average in the class.
+                    /* Scale the buffer to the current average wave. This recenters the wave
+                     * around 0. Some recording devices can skew the wave above or below 0,
+                     * and that quickly breaks the detection algorithm. */
+                    buffer[v1_idx] -= avg;
+                    buffer[v2_idx] -= avg;
+
+                    /* Extract two audio samples to combine. */
+                    final short v1 = buffer[v1_idx];
+                    final short v2 = buffer[v2_idx];
+
+                    /* Partialy compute the average amplitude. This is how we detect a "high" or "low"
+                     * signal. */
                     avgAmplitude += (double)(Math.abs(v1) + Math.abs(v2)) / (double)buffer.length;
 
+                    /* Collude the two wave forms (v1 and v2) into a single wave form to analyze.
+                     * This wave form is 1/2 the length of buffer. */
                     checkBuffer[chkBufIdx] = (short)(v1 + v2);
                 }
 
