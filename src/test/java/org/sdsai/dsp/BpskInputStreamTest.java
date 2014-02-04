@@ -46,7 +46,7 @@ public class BpskInputStreamTest {
     }
 
     @Test
-    public void readLivePskFile() throws IOException, UnsupportedAudioFileException {
+    public void readLivePskFileLinpsk() throws IOException, UnsupportedAudioFileException {
 
         final AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
             new AudioFormat(44100, 16, 1, true, true),
@@ -62,12 +62,52 @@ public class BpskInputStreamTest {
         final byte[] bytes = new byte[1024];
 
         final int read = is.read(bytes);
-
         Assert.assertEquals(
-            "!!CQ CQ CQ de N2SWT N2SWT K\n"+
+            "CQ CQ CQ de N2SWT N2SWT K\n"+
             "CQ CQ CQ de N2SWT N2SWT K\n"+
             "No one out there? Too bad!\n"+
             "N2SWT SK",
-            new String(bytes, 0, read));
+            new String(bytes, 2, read-2));
     }
+
+    @Test
+    public void readLivePskFileDroid() throws IOException, UnsupportedAudioFileException {
+        final AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
+            new AudioFormat(44100, 16, 1, true, true),
+            AudioSystem.getAudioInputStream(getClass().getResourceAsStream("droid.wav")));
+
+        final BpskInputStream is = new BpskInputStream(
+            audioInputStream,
+            new BpskDetector(
+                700,
+                (int)audioInputStream.getFormat().getSampleRate(),
+                BpskGenerator.PSK31_SYMBOLS_PER_SECOND));
+
+        final byte[] bytes = new byte[1024];
+
+        final int read = is.read(bytes);
+        System.out.println(new String(bytes, 0, read));
+
+    }
+
+    @Test
+    public void readLivePskFileDroid2() throws IOException, UnsupportedAudioFileException {
+        final AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
+            new AudioFormat(44100, 16, 1, true, true),
+            AudioSystem.getAudioInputStream(getClass().getResourceAsStream("droid2.wav")));
+
+        final BpskInputStream is = new BpskInputStream(
+            audioInputStream,
+            new BpskDetector(
+                700,
+                (int)audioInputStream.getFormat().getSampleRate(),
+                BpskGenerator.PSK31_SYMBOLS_PER_SECOND));
+
+        final byte[] bytes = new byte[1024];
+
+        final int read = is.read(bytes);
+        System.out.println(new String(bytes, 0, read));
+
+    }
+
 }

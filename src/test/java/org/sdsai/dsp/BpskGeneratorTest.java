@@ -54,11 +54,17 @@ public class BpskGeneratorTest {
 
         byte[] testPattern = new byte[]{1,0,1,1,0,0,0,1};
         byte[] b = p1.generateSignal(testPattern);
-        for (int i = 0; i < b.length; ++i){
-            b[i] += 128;
+        for (int i = 0; i < b.length/2; ++i){
+            short s = (short)(((b[2*i] << 8) & 0xff00) | (b[2*i+1] & 0xff));
+            if (s<0) {
+                s = (short)(s / 3.0);
+            }
+            b[2*i] = (byte)((s>>>8)&0xff);
+            b[2*i+1] = (byte)((s)&0xff);
         }
         byte[] checkPattern = p2.detectSignal(b, 0, b.length);
 
+        printArrays("skewUp", testPattern, checkPattern);
         Assert.assertArrayEquals(testPattern, checkPattern);
     }
 
@@ -69,11 +75,17 @@ public class BpskGeneratorTest {
 
         byte[] testPattern = new byte[]{1,0,1,1,0,0,0,1};
         byte[] b = p1.generateSignal(testPattern);
-        for (int i = 0; i < b.length; ++i){
-            b[i] -= 128;
+        for (int i = 0; i < b.length/2; ++i){
+            short s = (short)(((b[2*i] << 8) & 0xff00) | (b[2*i+1] & 0xff));
+            if (s>0) {
+                s = (short)(s / 3.0);
+            }
+            b[2*i] = (byte)((s>>>8)&0xff);
+            b[2*i+1] = (byte)((s)&0xff);
         }
         byte[] checkPattern = p2.detectSignal(b, 0, b.length);
 
+        printArrays("skewDown", testPattern, checkPattern);
         Assert.assertArrayEquals(testPattern, checkPattern);
     }
 
@@ -145,7 +157,7 @@ public class BpskGeneratorTest {
         final byte[] testPattern = new byte[]{1,0,1,0,1,0,1,0,1,1,0,0,0,1,0,1,0,1,1,0,0,1};
         final byte[] sig = prefixWithSilence(
             addWhiteNoise(
-                gen.generateSignal(testPattern), 0.5), 0.5);
+                gen.generateSignal(testPattern), 0.25), 0.5);
 
         final byte[] checkPattern = det.detectSignal(sig);
 

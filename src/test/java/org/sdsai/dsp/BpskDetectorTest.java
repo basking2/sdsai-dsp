@@ -38,5 +38,4 @@ public class BpskDetectorTest {
             System.out.println(i + "= "+output[i]);
         }
     }
-
 }

@@ -181,20 +181,9 @@ public class BpskDetector {
 
                 double avgAmplitude = 0.0;
 
-                /* Average value of all samples in a wave form. In a perfect wave, this should
-                 * be zero. With some audio equipment, this can vary. This is used to
-                 * re-center the received wave form around zero. */
-                double avg = 0.0;
-
                 /* How many zeros were detected. 50% or more is a phase inversion. */
                 int leftZeros = 0;
                 int rightZeros = 0;
-
-                /* Recenter wave form. */
-                /* TODO - make this happen less frequently. It shouldn't change too much. */
-                for (int i = 0; i < buffer.length; ++i) {
-                    avg += (double)(buffer[i] / buffer.length);
-                }
 
                 /* This loop does a few things.
                  * 1. The last step is to collude (add) the two halves of the wave form stored in
@@ -213,15 +202,9 @@ public class BpskDetector {
                     final int v1_idx = (bufferIdx + chkBufIdx) % buffer.length;
                     final int v2_idx = (bufferIdx + chkBufIdx + buffer.length/2) % buffer.length;
 
-                    /* Scale the buffer to the current average wave. This recenters the wave
-                     * around 0. Some recording devices can skew the wave above or below 0,
-                     * and that quickly breaks the detection algorithm. */
-                    buffer[v1_idx] -= avg;
-                    buffer[v2_idx] -= avg;
-
                     /* Extract two audio samples to combine. */
-                    final short v1 = buffer[v1_idx];
-                    final short v2 = buffer[v2_idx];
+                    final double v1 = buffer[v1_idx];
+                    final double v2 = buffer[v2_idx];
 
                     /* Partialy compute the average amplitude. This is how we detect a "high" or "low"
                      * signal. */
