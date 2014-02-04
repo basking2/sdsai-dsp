@@ -95,6 +95,10 @@ public class BpskDetector {
      */
     private static final int sampleSize = 16;
 
+    private final Goertzel signalDetector;
+
+    private final Goertzel.Result signalDetectorResult;
+
     /**
      * Constructor with sensible defaults.
      * <ul>
@@ -129,6 +133,10 @@ public class BpskDetector {
         this.buffer        = new short[samplesPerSymbol * 2];
         this.bufferIdx     = 0;
         this.checkBuffer   = new short[samplesPerSymbol];
+
+        /* Build filtering / detecting algorith object. */
+        this.signalDetector       = new Goertzel(hz, sampleRate, samplesPerSymbol);
+        this.signalDetectorResult = new Goertzel.Result();
     }
 
     /**
