@@ -43,47 +43,11 @@ public class BpskDetector {
     private short[] buffer;
 
     /**
-     * Buffer for checking for inversions. This is 1/2 the length of the recieve buffer.
-     */
-    private short[] checkBuffer;
-
-    /**
-     * Index into {@link #buffer} that allows it be used as a ring buffer.
-     *
-     * This points to the next index to be written, or the first index in the buffer
-     * to read. Either interpretation is correct.
-     */
-    private int bufferIdx;
-
-    /**
-     * How many audio samples encode 1 full audio wave cycle (2*Math.PI radians).
-     */
-    private double samplesPerCycle;
-
-    /**
      * The count of the samples currently making up the last reported symbol.
      *
      * When this exceeds samplesPerSymbol a 1 is reported and this is set to 0.
-     *
-     * This is also used to compute a {@link #checkShift}.
      */
     private int sampleCount;
-
-    /**
-     * Shift up when the next set of samples will be checked.
-     *
-     * When a phase inversion is detected, we have the opportunity to more cleanly
-     * center the ring buffer, {@link #buffer}, on the symbols we are recieving.
-     * This re-centering is done when a phase inversion is observed and it is
-     * determined that the zero symbol is leaving the current frame. If the zero symbol
-     * is partly out of our frame, then we can check the next symbol
-     * slightly earlier because it will be fully contained in the buffer slightly earlier.
-     *
-     * We choose to only accelerate checks. We do not delay checks because it is
-     * significantly more complex to distinguish between a delayed check and
-     * not confuse it with re-checking the symbol that caused the delay.
-     */
-    private int checkShift;
 
     /**
      * How many audio samples are gathered for each PSK symbol.
@@ -98,6 +62,31 @@ public class BpskDetector {
     private final Goertzel signalDetector;
 
     private final Goertzel.Result signalDetectorResult;
+
+    /**
+     * The number of signal samples necessary to do any work.
+     *
+     * This should be less than the number of {@link #samplesPerSymbol}
+     * but larger than two samples per wave form.
+     */
+    private final int binSize;
+
+    /**
+     * The current phase of the signal as detected by the {@link #signalDetector}.
+     */
+    private double phase;
+
+    /**
+     * The symbol detected in the previous match of {@link #signalDetector} or by {@link #sampleCount}.
+     *
+     * If a symbol is matched twice in a row it is written out.
+     */
+    private int lastSymbol;
+
+    /**
+     * Used to help find the peak of a signal.
+     */
+    private double lastMagnitude;
 
     /**
      * Constructor with sensible defaults.
@@ -125,18 +114,20 @@ public class BpskDetector {
         this.hz                 = hz;
         this.sampleRate         = sampleRate;
         this.symbolsPerSecond   = symbolsPerSecond;
-        this.samplesPerCycle    = sampleRate/hz;
         this.samplesPerSymbol   = (int)(this.sampleRate / this.symbolsPerSecond);
-        this.checkShift = 0;
 
         /* sampleRate / hz = number of samples for 1 full cycle of the wave. */
         this.buffer        = new short[samplesPerSymbol * 2];
-        this.bufferIdx     = 0;
-        this.checkBuffer   = new short[samplesPerSymbol];
 
         /* Build filtering / detecting algorith object. */
-        this.signalDetector       = new Goertzel(hz, sampleRate, samplesPerSymbol);
+        this.binSize              = (int)(sampleRate / hz)*2;
+        this.signalDetector       = new Goertzel(hz, sampleRate, this.binSize);
         this.signalDetectorResult = new Goertzel.Result();
+
+        this.phase = 0;
+
+        this.sampleCount = 0;
+        this.lastSymbol = 1;
     }
 
     /**
@@ -153,6 +144,7 @@ public class BpskDetector {
         return samples;
     }
 
+
     /**
      * Given a signal encoded as specified by {@link #getAudioFormat()} demodule it.
      *
@@ -167,97 +159,66 @@ public class BpskDetector {
      * @throws IOException on IO errors when populating various internal buffers.
      */
     public void detectSignal(final byte[] data, final int off, final int len, final OutputStream os)
-    throws IOException
+        throws IOException
     {
 
-        short samples[];
+        final short samples[] = convertToSamples(data, off, len);
 
-        samples = convertToSamples(data, off, len);
+        int samplesOff = 0;
 
-        for (int sample = 0; sample < samples.length; ++sample) {
+        do {
+            final int sampled = signalDetector.process(samples, samplesOff, samples.length-samplesOff, signalDetectorResult);
 
-            sampleCount++;
-
-            /* Add the processed data sample to the buffer. */
-            buffer[bufferIdx++] = samples[sample];
-            if (bufferIdx >= buffer.length) {
-                bufferIdx = 0;
+            /* Sampled = -1, the no result is available. Just update the offsets. */
+            if (sampled == -1) {
+                sampleCount += samples.length - samplesOff;
+                samplesOff   = samples.length;
             }
+            /* Otherwise, a result is available. */
+            else {
+                sampleCount += sampled;
+                samplesOff  += sampled;
 
-            /* Every 1/2 buffer fill, check for an inversion. */
-            if ((2 * (bufferIdx+checkShift)) % buffer.length == 0) {
-
-                double avgAmplitude = 0.0;
-
-                /* How many zeros were detected. 50% or more is a phase inversion. */
-                int leftZeros = 0;
-                int rightZeros = 0;
-
-                /* This loop does a few things.
-                 * 1. The last step is to collude (add) the two halves of the wave form stored in
-                 *    buffer into a wave form that is 1/2 the length of buffer named checkBuffer.
-                 *    The checkBuffer is analyzed for phase inversion.
-                 * 2. Re-center buffer around the variable `avg`. This is the first goal
-                 *    accomplished in the loop.
-                 * 3. Partially compute the average amplitude. This is done afer
-                 *    recentering `buffer` around `average`.
-                 *
-                 * We could allocate checkBuffer here, but putting it in the
-                 * class allows us to avoid asking for memory. It's a performance
-                 * choice. */
-                for (int chkBufIdx = 0; chkBufIdx < checkBuffer.length; ++chkBufIdx) {
-
-                    final int v1_idx = (bufferIdx + chkBufIdx) % buffer.length;
-                    final int v2_idx = (bufferIdx + chkBufIdx + buffer.length/2) % buffer.length;
-
-                    /* Extract two audio samples to combine. */
-                    final double v1 = buffer[v1_idx];
-                    final double v2 = buffer[v2_idx];
-
-                    /* Partialy compute the average amplitude. This is how we detect a "high" or "low"
-                     * signal. */
-                    avgAmplitude += (double)(Math.abs(v1) + Math.abs(v2)) / (double)buffer.length;
-
-                    /* Collude the two wave forms (v1 and v2) into a single wave form to analyze.
-                     * This wave form is 1/2 the length of buffer. */
-                    checkBuffer[chkBufIdx] = (short)(v1 + v2);
+                final double magnitude = signalDetectorResult.magnitude();
+                if (magnitude > 4 * lastMagnitude || magnitude * 4 < lastMagnitude) {
+                    lastMagnitude = magnitude;
+                    continue;
                 }
+                lastMagnitude = magnitude;
 
-                for (int chkBufIdx = 0; chkBufIdx < checkBuffer.length/2; ++chkBufIdx) {
-                    if (Math.abs(checkBuffer[chkBufIdx]) < avgAmplitude) {
-                        leftZeros++;
+                final double phaseNow   = signalDetectorResult.phase();
+                final double deltaPhase = Math.abs((phaseNow - phase) % (2.0*Math.PI));
+// System.out.println("PHASE "+phase+" PHASE NOW "+phaseNow+" DELTA PHASE "+deltaPhase);
+                /* This if-else handles signal detection. */
+                if (deltaPhase > Math.PI / 2.0 && deltaPhase < 3.0 * Math.PI / 2.0 )
+                {
+                    if (lastSymbol == 0) {
+                        sampleCount = 0;
+                        phase       = phaseNow;
+                        lastSymbol  = 2;
+                        os.write(0);
+// System.out.println("write 0");
                     }
-                }
-
-                for (int chkBufIdx = checkBuffer.length/2; chkBufIdx < checkBuffer.length; ++chkBufIdx) {
-                    if (Math.abs(checkBuffer[chkBufIdx]) < avgAmplitude) {
-                        rightZeros++;
-                    }
-                }
-
-                /* If there are some percentage of zeros, call it a phase inversion. */
-                if (leftZeros + rightZeros > checkBuffer.length / 2) {
-
-                    /* More left zeros means a departing inversion. Accelerate next check. */
-                    if (leftZeros > rightZeros && leftZeros >= rightZeros * 2) {
-                        sampleCount = samplesPerSymbol - (leftZeros + rightZeros);
-                        checkShift += sampleCount;
-                    }
-                    /* More right zeros means an incoming inversion.
-                     * Our modulo math does not allow us to checkShift a check,
-                     * we can only accelerate them. */
                     else {
-                        sampleCount = (leftZeros + rightZeros);
+// System.out.println("might be 0");
+                        lastSymbol = 0;
                     }
-                    os.write(0);
                 }
-                /* If not, then check if we've crossed over into another 1. */
                 else if (sampleCount >= samplesPerSymbol) {
-                    sampleCount = sampleCount % samplesPerSymbol;
-                    os.write(1);
+                    if (lastSymbol == 1) {
+                        sampleCount = (sampleCount % samplesPerSymbol);
+                        phase       = phaseNow;
+                        lastSymbol  = 2;
+                        os.write(1);
+// System.out.println("write 1");
+                    }
+                    else {
+                        lastSymbol = 1;
+                    }
                 }
             }
-        }
+
+        } while (samplesOff < samples.length);
     }
 
     /**

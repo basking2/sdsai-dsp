@@ -75,8 +75,8 @@ public final class Goertzel {
      * @param samples The array of 16 bit, signed audio samples.
      * @param len The number of samples to process, staring at {@code samples[0]}.
      */
-    private final void process(final short[] samples, final int len) {
-        for (int i = 0; i < len; ++i) {
+    private final void process(final short[] samples, final int off, final int len) {
+        for (int i = off; i < off+len; ++i) {
             q0 = coefficient * q1 - q2 + samples[i];
             q2 = q1;
             q1 = q0;
@@ -105,7 +105,7 @@ public final class Goertzel {
     /**
      * Reset the internal data stuctures for another iteration.
      */
-    private final void reset() {
+    public final void reset() {
         q0 = 0;
         q1 = 0;
         q2 = 0;
@@ -123,19 +123,19 @@ public final class Goertzel {
      * @return The number of samples processed from the given buffer to yeild a result or -1 if
      *         more samples are still needed.
      */
-    public final int process(final short[] samples, final Result result) {
+    public final int process(final short[] samples, final int off, final int len, final Result result) {
         /* Now many samples are left to compute? */
         final int n_left = N-n;
 
         /* If we will not have a result from the given samples, do them all. */
-        if (n_left > samples.length) {
-            process(samples, samples.length);
-            n += samples.length;
+        if (n_left > len) {
+            process(samples, off, len);
+            n += len;
             return -1;
         }
 
         /* Otherwise, do only those samples that we can to get a result, and stop. */
-        process(samples, n_left);
+        process(samples, off, n_left);
         setResult(result);
         reset();
         return n_left;
@@ -154,19 +154,19 @@ public final class Goertzel {
      * @return The number of samples processed from the given buffer to yeild a result or -1 if
      *         more samples are still needed.
      */
-    public final int process(short[] samples, final FastResult result) {
+    public final int process(final short[] samples, final int off, final int len, final FastResult result) {
         /* Now many samples are left to compute? */
         final int n_left = N-n;
 
         /* If we will not have a result from the given samples, do them all. */
-        if (n_left > samples.length) {
-            process(samples, samples.length);
-            n += samples.length;
+        if (n_left > len) {
+            process(samples, off, len);
+            n += len;
             return -1;
         }
 
         /* Otherwise, do only those samples that we can to get a result, and stop. */
-        process(samples, n_left);
+        process(samples, off, n_left);
         setResult(result);
         reset();
         return n_left;

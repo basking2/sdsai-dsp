@@ -25,6 +25,7 @@ public class BpskInputStreamTest {
         final BpskOutputStream os = new BpskOutputStream(bos, new BpskGenerator());
         final String testString = "This is a very nice test.";
 
+        os.preamble(10);
         os.write(testString.getBytes());
         os.close();
 
@@ -62,6 +63,7 @@ public class BpskInputStreamTest {
         final byte[] bytes = new byte[1024];
 
         final int read = is.read(bytes);
+        System.out.println(new String(bytes, 0, read));
         Assert.assertEquals(
             "CQ CQ CQ de N2SWT N2SWT K\n"+
             "CQ CQ CQ de N2SWT N2SWT K\n"+
@@ -87,7 +89,6 @@ public class BpskInputStreamTest {
 
         final int read = is.read(bytes);
         System.out.println(new String(bytes, 0, read));
-
     }
 
     @Test

@@ -302,7 +302,6 @@ public class BpskInputStream extends FilterInputStream {
         int bytesRead = 0;
 
         while (true) {
-
             /* Optimization - skip any leading zeros. */
             // while(symbolBufferOff < symbolBufferFill && symbolBuffer[symbolBufferOff] == 0) {
             //     ++symbolBufferOff;
