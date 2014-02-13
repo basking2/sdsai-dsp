@@ -124,7 +124,7 @@ public class BpskDetector {
         this.signalDetector       = new Goertzel(hz, sampleRate, this.binSize);
         this.signalDetectorResult = new Goertzel.Result();
 
-        this.phase = 0;
+        this.phase = Double.NaN;
 
         this.sampleCount = 0;
         this.lastSymbol = 1;
@@ -179,12 +179,13 @@ public class BpskDetector {
                 sampleCount += sampled;
                 samplesOff  += sampled;
 
-                final double magnitude = signalDetectorResult.magnitude();
-                if (magnitude > 4 * lastMagnitude || magnitude * 4 < lastMagnitude) {
-                    lastMagnitude = magnitude;
-                    continue;
-                }
-                lastMagnitude = magnitude;
+                // FIXME - leave out until the system is a bit more stable.
+                // final double magnitude = signalDetectorResult.magnitude();
+                // if (magnitude > 4 * lastMagnitude || magnitude * 4 < lastMagnitude) {
+                //     lastMagnitude = magnitude;
+                //     continue;
+                // }
+                // lastMagnitude = magnitude;
 
                 final double phaseNow   = signalDetectorResult.phase();
                 final double deltaPhase = Math.abs((phaseNow - phase) % (2.0*Math.PI));
@@ -213,6 +214,7 @@ public class BpskDetector {
 // System.out.println("write 1");
                     }
                     else {
+// System.out.println("might be 1");
                         lastSymbol = 1;
                     }
                 }

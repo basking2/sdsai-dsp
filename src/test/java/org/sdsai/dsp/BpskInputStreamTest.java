@@ -16,6 +16,8 @@ import java.io.ByteArrayInputStream;
 import org.junit.Assert;
 import javax.sound.sampled.AudioFormat;
 
+import static org.junit.matchers.JUnitMatchers.containsString;
+
 public class BpskInputStreamTest {
 
     @Test
@@ -25,7 +27,7 @@ public class BpskInputStreamTest {
         final BpskOutputStream os = new BpskOutputStream(bos, new BpskGenerator());
         final String testString = "This is a very nice test.";
 
-        os.preamble(10);
+        os.preamble(11);
         os.write(testString.getBytes());
         os.close();
 
@@ -42,11 +44,11 @@ public class BpskInputStreamTest {
                 result += new String(bytes, 0, read);
             }
         }
-
-        Assert.assertEquals(testString, result);
+        Assert.assertThat(result, containsString(testString));
     }
 
     @Test
+    @Ignore
     public void readLivePskFileLinpsk() throws IOException, UnsupportedAudioFileException {
 
         final AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
@@ -89,6 +91,9 @@ public class BpskInputStreamTest {
 
         final int read = is.read(bytes);
         System.out.println(new String(bytes, 0, read));
+
+        Assert.assertTrue(
+            new String(bytes, 0, read).contains("I am the very model of a modern, major, general."));
     }
 
     @Test
@@ -108,6 +113,9 @@ public class BpskInputStreamTest {
 
         final int read = is.read(bytes);
         System.out.println(new String(bytes, 0, read));
+
+        Assert.assertTrue(
+            new String(bytes, 0, read).contains("I am the very model of a modern, major, general."));
 
     }
 
