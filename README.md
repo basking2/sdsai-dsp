@@ -30,8 +30,10 @@ TODO
 
 These are desired features, but are not on any roadmap yet.
 
-- Binary input and output streams. These would send 8 bit bytes over Bpsk.
 - Add filtering
+  - Moving average filter to reduce noise.
+  - Low pass
+  - High pass
 - Add amplitude normalization
-- Add downsampling
-- Reconsider detection logic if system is not robust after filtering, amp normalization, and down sampling.
+- Add decimation?
+- Binary input and output streams. These would send 8 bit bytes over Bpsk.
