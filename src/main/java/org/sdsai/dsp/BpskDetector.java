@@ -36,13 +36,6 @@ public class BpskDetector {
     private double symbolsPerSecond;
 
     /**
-     * Filter buffer stores previous signal data for filtering and inversion detection.
-     *
-     * This contains exactly two symbols-worth of data.
-     */
-    private short[] buffer;
-
-    /**
      * The count of the samples currently making up the last reported symbol.
      *
      * When this exceeds samplesPerSymbol a 1 is reported and this is set to 0.
@@ -59,7 +52,7 @@ public class BpskDetector {
      */
     private static final int sampleSize = 16;
 
-    private final Goertzel signalDetector;
+    private Goertzel signalDetector;
 
     private final Goertzel.Result signalDetectorResult;
 
@@ -69,7 +62,7 @@ public class BpskDetector {
      * This should be less than the number of {@link #samplesPerSymbol}
      * but larger than two samples per wave form.
      */
-    private final int binSize;
+    private int binSize;
 
     /**
      * The current phase of the signal as detected by the {@link #signalDetector}.
@@ -121,23 +114,35 @@ public class BpskDetector {
      * @param symbolsPerSecond How many symbols per second. For PSK31 this is {@link BpskGenerator#PSK31_SYMBOLS_PER_SECOND}.
      */
     public BpskDetector(final double hz, final int sampleRate, final double symbolsPerSecond) {
-        this.hz                 = hz;
-        this.sampleRate         = sampleRate;
-        this.symbolsPerSecond   = symbolsPerSecond;
-        this.samplesPerSymbol   = (int)(this.sampleRate / this.symbolsPerSecond);
-
-        /* sampleRate / hz = number of samples for 1 full cycle of the wave. */
-        this.buffer        = new short[samplesPerSymbol * 2];
-
-        /* Build filtering / detecting algorith object. */
-        this.binSize              = (int)(sampleRate / hz)*2;
-        this.signalDetector       = new Goertzel(hz, sampleRate, this.binSize);
+        this.sampleRate           = sampleRate;
+        this.symbolsPerSecond     = symbolsPerSecond;
+        this.samplesPerSymbol     = (int)(this.sampleRate / this.symbolsPerSecond);
         this.signalDetectorResult = new Goertzel.Result();
 
-        this.phase = Double.NaN;
+        tune(hz);
 
+        this.phase       = Double.NaN;
         this.sampleCount = 0;
-        this.lastSymbol = 1;
+        this.lastSymbol  = 1;
+    }
+
+    /**
+     * Set the target frequency and build related objects.
+     *
+     * This allows a user to change the tuning of a created BpskDetector instead of having t
+     * destroy and create a new one. This is desirable in cases where the BpskDetector object
+     * has been incorporated in a pipeline of data and is not easily removed or replaced.
+     *
+     * The user should take care to prevent data from being processed by this object
+     * while the tune method is being called.
+     *
+     * @param hz The new target frequncy for this object.
+     *
+     */
+    public void tune(final double hz) {
+        this.hz             = hz;
+        this.binSize        = (int)(sampleRate / hz) * 2;
+        this.signalDetector = new Goertzel(hz, sampleRate, this.binSize);
     }
 
     /**
