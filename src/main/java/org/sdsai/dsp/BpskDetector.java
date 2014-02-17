@@ -154,7 +154,6 @@ public class BpskDetector {
         return samples;
     }
 
-
     /**
      * Given a signal encoded as specified by {@link #getAudioFormat()} demodule it.
      *
@@ -171,7 +170,6 @@ public class BpskDetector {
     public void detectSignal(final byte[] data, final int off, final int len, final OutputStream os)
         throws IOException
     {
-
         final short samples[] = convertToSamples(data, off, len);
 
         int samplesOff = 0;
