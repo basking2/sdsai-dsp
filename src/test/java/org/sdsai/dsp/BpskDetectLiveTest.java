@@ -18,7 +18,10 @@ import javax.sound.sampled.AudioFormat;
 
 import static org.junit.matchers.JUnitMatchers.containsString;
 
-public class BpskInputStreamTest {
+/**
+ * Run the dectecot on live {@code .wav} files.
+ */
+public class BpskDetectLiveTest {
 
     @Test
     public void readGenerated() throws IOException, UnsupportedAudioFileException {
@@ -48,7 +51,32 @@ public class BpskInputStreamTest {
     }
 
     @Test
-    @Ignore
+    public void readFilteredLivePskFileLinpsk() throws IOException, UnsupportedAudioFileException {
+
+        final AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
+            new AudioFormat(44100, 16, 1, true, true),
+            AudioSystem.getAudioInputStream(getClass().getResourceAsStream("cq.wav")));
+
+        final BpskInputStream is = new BpskInputStream(
+            audioInputStream,
+            new BpskDetector(
+                1000,
+                (int)audioInputStream.getFormat().getSampleRate(),
+                BpskGenerator.PSK31_SYMBOLS_PER_SECOND));
+
+        final byte[] bytes = new byte[1024];
+
+        final int read = is.read(bytes);
+        System.out.println(new String(bytes, 0, read));
+        Assert.assertEquals(
+            "CQ CQ CQ de N2SWT N2SWT K\n"+
+            "CQ CQ CQ de N2SWT N2SWT K\n"+
+            "No one out there? Too bad!\n"+
+            "N2SWT SK",
+            new String(bytes, 2, read-2));
+    }
+
+    @Test
     public void readLivePskFileLinpsk() throws IOException, UnsupportedAudioFileException {
 
         final AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(

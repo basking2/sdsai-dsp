@@ -103,6 +103,16 @@ public class BpskDetector {
             BpskGenerator.PSK31_SYMBOLS_PER_SECOND);
     }
 
+        /**
+     * Constructor.
+     *
+     * @param hz Frequency of the detected tone.
+     * @param sampleRate The audio sample rate.
+     */
+    public BpskDetector(final double hz, final int sampleRate) {
+        this(hz, sampleRate, BpskGenerator.PSK31_SYMBOLS_PER_SECOND);
+    }
+
     /**
      * Constructor.
      *

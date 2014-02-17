@@ -161,6 +161,22 @@ public class BpskGeneratorTest {
         Assert.assertThat(testPattern, containsByteArray(checkPattern));
     }
 
+    @Test
+    public void encodeDecode1000Hz() throws IOException {
+        final BpskGenerator gen = new BpskGenerator(1000, 44100);
+        final BpskDetector det = new BpskDetector(1000, 44100);
+
+        final byte[] testPattern = new byte[]{1,0,1,0,1,0,1,0,1,1,0,0,0,1,0,1,0,1,1,0,0,1};
+        final byte[] sig = prefixWithSilence(
+            addWhiteNoise(
+                gen.generateSignal(testPattern), 0.25), 0.5);
+
+        final byte[] checkPattern = det.detectSignal(sig);
+
+        printArrays("encodeDecode1000Hz100SymRate", testPattern, checkPattern);
+        Assert.assertThat(testPattern, containsByteArray(checkPattern));
+    }
+
     private void printArrays(String name, byte[] expect, byte[] test) {
         System.out.println("----"+name+"----");
         for (int i = 0; i < Math.max(expect.length, test.length); i++) {

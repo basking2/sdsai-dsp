@@ -254,8 +254,7 @@ public class BpskInputStream extends FilterInputStream {
         /* Fill the symbol buffer. */
         psk.detectSignal(dataBuffer, 0, bytesRead, bufferFiller);
 
-        /* FIXME - this is somewhat meaningless. */
-        return symbolBufferFill - symbols;
+        return bytesRead;
     }
 
     /**
