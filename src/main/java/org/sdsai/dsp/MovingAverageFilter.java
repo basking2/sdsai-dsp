@@ -43,7 +43,7 @@ public final class MovingAverageFilter {
      * @param sampleRate The sample rate in samples per second.
      */
     public MovingAverageFilter(final double hz, final int sampleRate) {
-        this.samples = new short[(int)(Math.floor(sampleRate / hz))];
+        this.samples = new short[(int)(Math.floor(sampleRate / hz / 2))];
     }
 
     /**
