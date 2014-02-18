@@ -56,6 +56,8 @@ public class BpskDetector {
 
     private final Goertzel.Result signalDetectorResult;
 
+    private MovingAverageFilter movingAverageFilter;
+
     /**
      * The number of signal samples necessary to do any work.
      *
@@ -140,20 +142,25 @@ public class BpskDetector {
      *
      */
     public void tune(final double hz) {
-        this.hz             = hz;
-        this.binSize        = (int)(sampleRate / hz) * 2;
-        this.signalDetector = new Goertzel(hz, sampleRate, this.binSize);
+        this.hz                  = hz;
+        this.binSize             = (int)(sampleRate / hz) * 2;
+        this.signalDetector      = new Goertzel(hz, sampleRate, this.binSize);
+        this.movingAverageFilter = new MovingAverageFilter(hz, sampleRate);
     }
 
     /**
-     * Given a 16bit, big endian, signed audio sample, conver it to short[].
+     * Given a 16bit, big endian, signed audio sample, convert it to short[] and apply filters.
      */
     private short[] convertToSamples(final byte[] buffer, final int off, final int len) {
         short[] samples = new short[len / 2];
 
         /* Convert the incoming buffer into an array of samples. */
         for (int i = 0; i < samples.length; ++i) {
+            /* Convert the raw bytes to a sample. */
             samples[i] = (short)(((buffer[off+i*2] << 8) & 0xff00) | (buffer[off+i*2+1] & 0xff));
+
+            /* Apply a moving average filter to that sample. */
+            samples[i] = movingAverageFilter.process(samples[i]);
         }
 
         return samples;

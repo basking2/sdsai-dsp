@@ -41,12 +41,13 @@ public class BpskDetectLiveTest {
 
         final int read = is.read(bytes);
         System.out.println(new String(bytes, 0, read));
-        Assert.assertEquals(
-            "CQ CQ CQ de N2SWT N2SWT K\n"+
-            "CQ CQ CQ de N2SWT N2SWT K\n"+
-            "No one out there? Too bad!\n"+
-            "N2SWT SK",
-            new String(bytes, 1, read-1));
+        Assert.assertTrue(
+            new String(bytes, 0, read).
+                contains(
+                    "CQ CQ CQ de N2SWT N2SWT K\n"+
+                    "CQ CQ CQ de N2SWT N2SWT K\n"+
+                    "No one out there? Too bad!\n"+
+                    "N2SWT SK"));
     }
 
     @Test

@@ -60,7 +60,7 @@ public final class MovingAverageFilter {
 
         /* Move current. */
         ++current;
-        if (current > samples.length) {
+        if (current >= samples.length) {
             current = 0;
         }
 
