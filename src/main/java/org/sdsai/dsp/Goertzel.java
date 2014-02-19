@@ -180,7 +180,7 @@ public final class Goertzel {
         public double imaginary;
 
         /**
-         * Comput the phase from {@code real} and {@code imaginary}.
+         * Compute the phase from {@code real} and {@code imaginary}.
          */
         public double phase() {
             if (real > 0) {

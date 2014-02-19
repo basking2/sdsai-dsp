@@ -15,13 +15,13 @@ public final class Convolution {
      */
     public static final void convolve(
         final short[] x,
-        int           x_off,
-        int           x_len,
+        final int     x_off,
+        final int     x_len,
         final short[] h,
-        int           h_off,
-        int           h_len,
+        final int     h_off,
+        final int     h_len,
         final short[] y,
-        int           y_off
+        final int     y_off
     )
     {
         for (int x_i = x_off; x_i < x_off+x_len; ++x_i) {
@@ -44,11 +44,11 @@ public final class Convolution {
      */
     public static final void convolve(
         final short[] x,
-        int           x_off,
-        int           x_len,
+        final int     x_off,
+        final int     x_len,
         final short[] h,
         final short[] y,
-        int           y_off
+        final int     y_off
     )
     {
         convolve(x, x_off, x_len, h, 0, h.length, y, y_off);
@@ -68,10 +68,10 @@ public final class Convolution {
     public static final void convolve(
         final short[] x,
         final short[] h,
-        int           h_off,
-        int           h_len,
+        final int     h_off,
+        final int     h_len,
         final short[] y,
-        int           y_off
+        final int     y_off
     )
     {
         convolve(x, 0, x.length, h, h_off, h_len, y, y_off);
@@ -90,7 +90,7 @@ public final class Convolution {
         final short[] x,
         final short[] h,
         final short[] y,
-        int           y_off
+        final int     y_off
     )
     {
         convolve(x, 0, x.length, h, 0, h.length, y, y_off);
@@ -108,8 +108,8 @@ public final class Convolution {
      */
     public static final void convolve(
         final short[] x,
-        int           x_off,
-        int           x_len,
+        final int     x_off,
+        final int     x_len,
         final short[] h,
         final short[] y
     )
@@ -130,8 +130,8 @@ public final class Convolution {
     public static final void convolve(
         final short[] x,
         final short[] h,
-        int           h_off,
-        int           h_len,
+        final int     h_off,
+        final int     h_len,
         final short[] y
     )
     {

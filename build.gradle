@@ -12,6 +12,22 @@ dependencies {
     testCompile 'junit:junit:4+'
 }
 
+compileJava  {
+    options.fork = true
+    // options.forkOptions.executable
+    options.forkOptions.memoryMaximumSize='1g'
+    options.forkOptions.memoryInitialSize='1g'
+    options.compilerArgs << '-Xlint:deprecation'
+}
+
+compileTestJava  {
+    options.fork = true
+    // options.forkOptions.executable
+    options.forkOptions.memoryMaximumSize='1g'
+    options.forkOptions.memoryInitialSize='1g'
+    options.compilerArgs << '-Xlint:deprecation'
+}
+
 /* Setup Maven installation into the local repository. */
 install {
     repositories.mavenInstaller {

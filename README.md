@@ -31,9 +31,9 @@ TODO
 These are desired features, but are not on any roadmap yet.
 
 - Add filtering
-  - Moving average filter to reduce noise.
   - Low pass
   - High pass
 - Add amplitude normalization
 - Add decimation?
 - Binary input and output streams. These would send 8 bit bytes over Bpsk.
+- Write simple signal generators as OutputStreams.
