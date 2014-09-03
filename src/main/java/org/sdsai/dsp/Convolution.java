@@ -153,4 +153,5 @@ public final class Convolution {
     )
     {
         convolve(x, 0, x.length, h, 0, h.length, y, 0);
-    }}
+    }
+}
