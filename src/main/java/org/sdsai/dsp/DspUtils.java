@@ -54,9 +54,15 @@ public final class DspUtils {
     }
 
     /**
-     * Rerse the bits used to comprise the integer i.
+     * Reverse the 31 low order bits used to comprise the integer i.
+     *
+     * The highorder bit is ignored because it is the signed bit.
+     *
+     * @param i The integer to reverse the bits of.
+     *
+     * @return The reversed bits.
      */
-    private static final int bitReverse(int i)
+    private static final int bitReverse31(int i)
     {
         return
             ((i >>> 30) & 0x00000001) |
@@ -128,7 +134,7 @@ public final class DspUtils {
         /* TODO - cache / memoize this mapping for a particular size array? */
         for (int i = 0; i < mapping.length; ++i) {
             mapping[i][0] = i;
-            mapping[i][1] = bitReverse(i);
+            mapping[i][1] = bitReverse31(i);
         }
 
         Arrays.sort(mapping, intPairComparator);

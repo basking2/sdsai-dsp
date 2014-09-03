@@ -11,7 +11,7 @@ public class DspUtilsTest
 
         short[] signal = new short[32];
         short[] img    = new short[signal.length];
-        final int hz   = 4;
+        final int hz   = 2;
 
         new SignalGenerator(hz, 32, (short)100).read(signal);
 
