@@ -147,6 +147,25 @@ public final class DspUtils {
         }
     }
 
+    private static final void bitReversalSort(final double[] real) {
+        /* First, make a tranlation map from the index of the array to the integer it points to. */
+        final int mapping[][] = new int[real.length][2];
+
+        /* TODO - cache / memoize this mapping for a particular size array? */
+        for (int i = 0; i < mapping.length; ++i) {
+            mapping[i][0] = i;
+            mapping[i][1] = bitReverse31(i);
+        }
+
+        Arrays.sort(mapping, intPairComparator);
+
+        for (int i = 0; i < real.length; ++i) {
+            final int j = mapping[i][0];
+            final double tmp = real[i];
+            real[i] = real[j];
+            real[j] = tmp;
+        }
+    }
     /**
      * Fast Fourier Transform.
      *
@@ -189,6 +208,89 @@ public final class DspUtils {
              * (which happens to be the previous stride value). */
             segment  = stride;
             stride  *= 2;
+        }
+    }
+
+    /**
+     * Fast Fourier Transform.
+     *
+     * @param real The time-domain signal. This must be a power of two in length.
+     * @param img The imaginary components. This array must start zeroed and be the same length as {@code real}.
+     */
+    public static final void fft(final double[] real, final double[] img)
+    {
+        /* Bit reversal sort. We do not sort img because it should be 0s. */
+        bitReversalSort(real);
+
+        for (int segment = 1, stride = 2; stride <= real.length; ) {
+
+            /* Iterate around the sinusoid using complex multiplication. */
+            final double sinusoid_real_itr =  Math.cos(Math.PI / segment);
+            final double sinusoid_img_itr  = -Math.sin(Math.PI / segment);
+
+            /* Start the sinusoid at 0 degrees. */
+            double sinusoid_real = 1;
+            double sinusoid_img  = 0;
+
+            for (int j = 0; j < segment; ++j) {
+                for (int i1 = j, i2 = j + segment; i1 < real.length; i1 += stride, i2 += stride) {
+                    final double real_tmp = real[i2] * sinusoid_real - img[i2] * sinusoid_img;
+                    final double img_tmp  = real[i2] * sinusoid_img + img[i2] * sinusoid_real;
+                    real[i2] = (real[i1] - real_tmp);
+                    img[i2]  = (img[i1] - img_tmp);
+                    real[i1] = (real[i1] + real_tmp);
+                    img[i1]  = (img[i1] + img_tmp);
+                }
+
+                /* Advance the sinusoid. */
+                final double real_tmp = sinusoid_real;
+                sinusoid_real = real_tmp * sinusoid_real_itr - sinusoid_img * sinusoid_img_itr;
+                sinusoid_img = real_tmp * sinusoid_img_itr + sinusoid_img * sinusoid_real_itr;
+            }
+
+            /* Advance the loop variables.
+             * Segment is always 1/2 of stride
+             * (which happens to be the previous stride value). */
+            segment  = stride;
+            stride  *= 2;
+        }
+    }
+
+    /**
+     * Inverse fft.
+     */
+    public static final void ifft(final short[] real, final short[] img)
+    {
+        for (int i = 0; i < img.length; ++i)
+        {
+            img[i] = (short)-img[i];
+        }
+
+        fft(real, img);
+
+        for (int i = 0; i < img.length; ++i)
+        {
+            real[i] = (short)( real[i]  / img.length);
+            img[i]  = (short)((-img[i]) / img.length);
+        }
+    }
+
+    /**
+     * Inverse fft.
+     */
+    public static final void ifft(final double[] real, final double[] img)
+    {
+        for (int i = 0; i < img.length; ++i)
+        {
+            img[i] = -img[i];
+        }
+
+        fft(real, img);
+
+        for (int i = 0; i < img.length; ++i)
+        {
+            real[i] =  real[i]  / img.length;
+            img[i]  = (-img[i]) / img.length;
         }
     }
 

@@ -47,6 +47,10 @@ public class SignalGenerator {
         return (short) (amplitude * Math.sin(w * sample++));
     }
 
+    public final double readDouble() {
+        return (amplitude * Math.sin(w * sample++));
+    }
+
     public int read(final short[] data) {
         return read(data, 0, data.length);
     }
@@ -57,4 +61,14 @@ public class SignalGenerator {
         }
         return len;
     }
-}
+
+    public int read(final double[] data) {
+        return read(data, 0, data.length);
+    }
+
+    public int read(final double[] data, final int off, final int len) {
+        for (int i = off; i < off+len; ++i) {
+            data[i] = readDouble();
+        }
+        return len;
+    }}
