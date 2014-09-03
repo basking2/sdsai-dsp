@@ -9,11 +9,11 @@ public class DspUtilsTest
     @Test
     public void testFft() {
 
-        short[] signal = new short[16];
+        short[] signal = new short[32];
         short[] img    = new short[signal.length];
         final int hz   = 4;
 
-        new SignalGenerator(hz, 16, (short)100).read(signal);
+        new SignalGenerator(hz, 32, (short)100).read(signal);
 
         System.out.println("--- FFT OUT --- ");
         DspUtils.fft(signal, img);

@@ -1,5 +1,8 @@
 package org.sdsai.dsp;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 /**
  * Useful equations wrapped in functions for use with DSP.
  *
@@ -51,6 +54,45 @@ public final class DspUtils {
     }
 
     /**
+     * Rerse the bits used to comprise the integer i.
+     */
+    private static final int bitReverse(int i)
+    {
+        return
+            ((i >>> 30) & 0x00000001) |
+            ((i <<  30) & 0x40000000) |
+            ((i >>> 28) & 0x00000002) |
+            ((i <<  28) & 0x20000000) |
+            ((i >>> 26) & 0x00000004) |
+            ((i <<  26) & 0x10000000) |
+            ((i >>> 24) & 0x00000008) |
+            ((i <<  24) & 0x08000000) |
+            ((i >>> 22) & 0x00000010) |
+            ((i <<  22) & 0x04000000) |
+            ((i >>> 20) & 0x00000020) |
+            ((i <<  20) & 0x02000000) |
+            ((i >>> 18) & 0x00000040) |
+            ((i <<  18) & 0x01000000) |
+            ((i >>> 16) & 0x00000080) |
+            ((i <<  16) & 0x00800000) |
+            ((i >>> 14) & 0x00000100) |
+            ((i <<  14) & 0x00400000) |
+            ((i >>> 12) & 0x00000200) |
+            ((i <<  12) & 0x00200000) |
+            ((i >>> 10) & 0x00000400) |
+            ((i <<  10) & 0x00100000) |
+            ((i >>>  8) & 0x00000800) |
+            ((i <<   8) & 0x00080000) |
+            ((i >>>  6) & 0x00001000) |
+            ((i <<   6) & 0x00040000) |
+            ((i >>>  4) & 0x00002000) |
+            ((i <<   4) & 0x00020000) |
+            ((i >>>  2) & 0x00004000) |
+            ((i <<   2) & 0x00010000)
+            ;
+    }
+
+    /**
      * Compute the discrete fourier transform on samples.
      * @param samples Signal data. This must be N elements long.
      * @param re_x The real portion of the signal is written here. This must be N/2+1 elements in length.
@@ -72,20 +114,30 @@ public final class DspUtils {
         }
     }
 
-    private static final void bitReversalSort(final short[] real) {
-        for (int j=1, i = 1; i < real.length; i+=2) {
-            if (j > i) {
-                final short tmp = real[i];
-                real[i] = real[j];
-                real[j] = tmp;
-            }
+    private static Comparator<int[]> intPairComparator = new Comparator<int[]>(){
+        @Override
+        public int compare(final int[] i, int[] j) {
+            return i[1] - j[1];
+        }
+    };
 
-            double m;
-            for (m = real.length/2; (m>=2 && j > m);) {
-                j -= m;
-                m = m/2;
-            }
-            j += m;
+    private static final void bitReversalSort(final short[] real) {
+        /* First, make a tranlation map from the index of the array to the integer it points to. */
+        final int mapping[][] = new int[real.length][2];
+
+        /* TODO - cache / memoize this mapping for a particular size array? */
+        for (int i = 0; i < mapping.length; ++i) {
+            mapping[i][0] = i;
+            mapping[i][1] = bitReverse(i);
+        }
+
+        Arrays.sort(mapping, intPairComparator);
+
+        for (int i = 0; i < real.length; ++i) {
+            final int j = mapping[i][0];
+            final short tmp = real[i];
+            real[i] = real[j];
+            real[j] = tmp;
         }
     }
 
