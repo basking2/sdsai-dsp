@@ -132,26 +132,6 @@ public final class DspUtils {
         }
     };
 
-    private static final void bitReversalSort(final short[] real) {
-        /* First, make a tranlation map from the index of the array to the integer it points to. */
-        final int mapping[][] = new int[real.length][2];
-
-        /* TODO - cache / memoize this mapping for a particular size array? */
-        for (int i = 0; i < mapping.length; ++i) {
-            mapping[i][0] = i;
-            mapping[i][1] = bitReverse31(i);
-        }
-
-        Arrays.sort(mapping, intPairComparator);
-
-        for (int i = 0; i < real.length; ++i) {
-            final int j = mapping[i][0];
-            final short tmp = real[i];
-            real[i] = real[j];
-            real[j] = tmp;
-        }
-    }
-
     private static final void bitReversalSort(final double[] real) {
         /* First, make a tranlation map from the index of the array to the integer it points to. */
         final int mapping[][] = new int[real.length][2];
@@ -171,28 +151,17 @@ public final class DspUtils {
             real[j] = tmp;
         }
     }
-    /**
-     * Fast Fourier Transform.
-     *
-     * @param real The time-domain signal. This must be a power of two in length.
-     * @param img The imaginary components. This array must start zeroed and be the same length as {@code real}.
-     */
-    public static final void fft(final short[] real, final short[] img)
+
+    public static final void fft(final double[] real, final double[] img)
     {
-        final double[] realData = new double[real.length];
-
-        for (int i = 0; i < realData.length; ++i) {
-            realData[i] = real[i];
-        }
-
         final FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
 
-        final Complex[] c = fft.transform(realData, TransformType.FORWARD);
+        final Complex[] c = fft.transform(real, TransformType.FORWARD);
 
         int i = 0;
         for (; i < c.length; ++i) {
-            real[i] = (short) c[i].getReal();
-            img[i]  = (short) c[i].getImaginary();
+            real[i] = c[i].getReal();
+            img[i] = c[i].getImaginary();
         }
 
         for (; i < real.length; ++i) {
@@ -201,11 +170,11 @@ public final class DspUtils {
         }
     }
 
-    public static final void fft(final double[] real, final double[] img)
+    public static final void ifft(final double[] real, final double[] img)
     {
         final FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
 
-        final Complex[] c = fft.transform(real, TransformType.FORWARD);
+        final Complex[] c = fft.transform(real, TransformType.INVERSE);
 
         int i = 0;
         for (; i < c.length; ++i) {
