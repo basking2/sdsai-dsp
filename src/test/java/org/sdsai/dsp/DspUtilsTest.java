@@ -7,79 +7,14 @@ import org.junit.Assert;
 public class DspUtilsTest
 {
     @Test
-    public void testIfft()
-    {
-        short[] signal = new short[32];
-        short[] img    = new short[signal.length];
-        final int hz   = 2;
-
-        new SignalGenerator(hz, 32, (short)100).read(signal);
-
-        System.out.println("--- IFFT OUT --- ");
-        DspUtils.fft(signal, img);
-        DspUtils.ifft(signal, img);
-
-        print(img, signal);
-
-        int maxidx = 0;
-        double mag = 0;
-        for (int i = 0; i < signal.length; ++i) {
-            double m = DspUtils.magnitude(img[i], signal[i]);
-            if (m > mag) {
-                mag = m;
-                maxidx = i;
-            }
-        }
-
-        System.out.println("hz = "+hz+" peak at "+maxidx +" of "+mag);
-
-        for (int i = 0; i < signal.length; ++i)
-        {
-            Assert.assertTrue(signal[i] < 100);
-        }
-    }
-
-    @Test
-    public void testIfftDouble()
-    {
-        double[] signal = new double[32];
-        double[] img    = new double[signal.length];
-        final int hz   = 2;
-
-        new SignalGenerator(hz, 32, (short)100).read(signal);
-
-        System.out.println("--- IFFT OUT DOUBLE --- ");
-        DspUtils.fft(signal, img);
-        DspUtils.ifft(signal, img);
-
-        print(img, signal);
-
-        int maxidx = 0;
-        double mag = 0;
-        for (int i = 0; i < signal.length; ++i) {
-            double m = DspUtils.magnitude(img[i], signal[i]);
-            if (m > mag) {
-                mag = m;
-                maxidx = i;
-            }
-        }
-
-        System.out.println("hz = "+hz+" peak at "+maxidx +" of "+mag);
-
-        for (int i = 0; i < signal.length; ++i)
-        {
-            Assert.assertTrue(signal[i] < 100);
-        }
-    }
-
-    @Test
     public void testFftDouble() {
 
-        double[] signal = new double[32];
-        double[] img    = new double[signal.length];
+        final int sampleRate = 32;
         final int hz   = 2;
+        double[] signal = new double[1024];
+        double[] img    = new double[signal.length];
 
-        new SignalGenerator(hz, 32, (short)100).read(signal);
+        new SignalGenerator(hz, sampleRate, (short)100).read(signal);
 
         System.out.println("--- FFT OUT DOUBLE --- ");
         DspUtils.fft(signal, img);
@@ -96,17 +31,20 @@ public class DspUtilsTest
             }
         }
 
+
         System.out.println("hz = "+hz+" peak at "+maxidx +" of "+mag);
-        Assert.assertEquals(8, maxidx);
+        Assert.assertEquals(hz, DspUtils.fftIdxToHz(maxidx, sampleRate, signal.length), 0.1);
     }
+
     @Test
     public void testFft() {
 
+        final int sampleRate = 32;
+        final int hz   = 2;
         short[] signal = new short[32];
         short[] img    = new short[signal.length];
-        final int hz   = 2;
 
-        new SignalGenerator(hz, 32, (short)100).read(signal);
+        new SignalGenerator(hz, sampleRate, (short)100).read(signal);
 
         System.out.println("--- FFT OUT --- ");
         DspUtils.fft(signal, img);
@@ -124,7 +62,7 @@ public class DspUtilsTest
         }
 
         System.out.println("hz = "+hz+" peak at "+maxidx +" of "+mag);
-        Assert.assertEquals(8, maxidx);
+        Assert.assertEquals(hz, DspUtils.fftIdxToHz(maxidx, sampleRate, signal.length), 0.1);
     }
 
     @Test
@@ -179,5 +117,4 @@ public class DspUtilsTest
                     DspUtils.magnitude(img[i], real[i])));
         }
     }
-
 }
