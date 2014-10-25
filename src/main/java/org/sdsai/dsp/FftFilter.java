@@ -61,6 +61,16 @@ public class FftFilter
             throw new IllegalArgumentException("Signal length must be " + sampleSize());
         }
 
+        /* Load overlap into real buffer. */
+        for (int i = 0; i < overlap.length; ++i) {
+            real[i] = overlap[i];
+        }
+
+        /* Load signal into real buffer. */
+        for (int i = 0; i < signal.length; ++i) {
+            real[i + overlap.length] = signal[i];
+        }
+
         /* Do the convolution. */
         DspUtils.fft(real, img);
 
@@ -74,17 +84,30 @@ public class FftFilter
 
         /* End of the convolution. */
 
-        /* Copy to the overlap. */
+        /* Compute and copy the overlap. */
         for (int i = 0; i < overlap.length; ++i) {
             real[i]   = real[i] + overlap[i];
-            signal[i] = real[i];
         }
 
+        /* Record the overlap of the next iteration. */
         for (int i = 0, offset = real.length - overlap.length; i < overlap.length; ++i) {
             overlap[i] = real[offset + i];
         }
 
-        /* At this point 0 through (real.length - overlap.length) is available.
-         * The overlap is still stored. */
+        /* Output the filtered signal. */
+        for (int i = 0; i < signal.length; ++i) {
+            signal[i] = real[i];
+        }
+    }
+
+    /**
+     * Call when the filter is done.
+     *
+     * The Overlap buffer starts as all zeros, but eventually
+     * contains part of the filtered signal and should be output
+     * at the end of the filter's use.
+     */
+    public double[] getOverlap() {
+        return overlap;
     }
 }
