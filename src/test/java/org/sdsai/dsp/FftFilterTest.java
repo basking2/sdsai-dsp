@@ -23,7 +23,7 @@ public class FftFilterTest {
         final SignalGenerator sg = new SignalGenerator(hz, sampleRate, (short) 10);
         final double[] real = new double[1024];
         final double[] img  = new double[real.length];
-        final FftFilter filter = new FftFilter(sg, 1024, 300);
+        final FftFilter filter = new FftFilter(sg, 64, 10);
 
         sg.read(real);
 
