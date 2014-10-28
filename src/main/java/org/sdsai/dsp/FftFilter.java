@@ -9,11 +9,21 @@ import java.util.Arrays;
  */
 public class FftFilter
 {
-    final double[] filterKernel;
     final double[] filterKernelReal;
     final double[] filterKernelImg;
 
-    double[] overlap;
+    /**
+     * The number of samples that {@link #filter(double[])} requires.
+     */
+    final int sampleCount;
+
+    /**
+     * The number of filter kernel sample count.
+     * Equal to {@code filterKernelReal.length * 2}.
+     */
+    final int filterKernelSampleCount;
+
+    final double[] overlap;
 
     /**
      * Constructor.
@@ -30,35 +40,51 @@ public class FftFilter
         final int             overlap
     )
     {
-        this.filterKernel = new double[signalSize];
+        /* Set simple, unprocessed values. */
+        this.filterKernelSampleCount = signalSize;
+        this.sampleCount             = filterKernelSampleCount - overlap;
+        this.overlap                 = new double[overlap];
 
-        signalGenerator.read(this.filterKernel);
+        /* Begin Filter Kernel Initialization. */
 
-        final double[] real = Arrays.copyOf(filterKernel, signalSize);
-        final double[] img  = new double[signalSize];
+        final double[] filterKernel = new double[filterKernelSampleCount];
+
+        /* Populate filterKernel buffer. */
+        signalGenerator.read(filterKernel);
+
+        final double[] real = Arrays.copyOf(filterKernel, filterKernelSampleCount);
+        final double[] img  = new double[filterKernelSampleCount];
 
         DspUtils.fft(real, img);
 
-        this.filterKernelReal = Arrays.copyOf(real, signalSize / 2);
-        this.filterKernelImg  = Arrays.copyOf(img,  signalSize / 2);
+        this.filterKernelReal = Arrays.copyOf(real, filterKernelSampleCount / 2);
+        this.filterKernelImg  = Arrays.copyOf(img,  filterKernelSampleCount / 2);
+        /* End Filter Kernel Initialization. */
+    }
 
-        this.overlap = new double[overlap];
+    public FftFilter(
+        final double hz,
+        final int    sampleRate,
+        final int    signalSize,
+        final int    overlap
+    )
+    {
+        this(new SignalGenerator(hz, sampleRate), signalSize, overlap);
     }
 
     /**
      * Return the size of the sample buffer that this filter can process.
      */
-    public int sampleSize() {
-        return filterKernel.length - overlap.length;
+    public int sampleCount() {
+        return sampleCount;
     }
 
-    public void filter(final double[] signal)
-    {
-        final double[] real = new double[filterKernel.length];
-        final double[] img  = new double[filterKernel.length];
+    public void filter(final double[] signal) {
+        final double[] real = new double[filterKernelSampleCount];
+        final double[] img  = new double[filterKernelSampleCount];
 
-        if (signal.length != sampleSize()) {
-            throw new IllegalArgumentException("Signal length must be " + sampleSize());
+        if (signal.length != sampleCount()) {
+            throw new IllegalArgumentException("Signal length must be " + sampleCount());
         }
 
         /* Load overlap into real buffer. */
