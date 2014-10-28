@@ -151,13 +151,13 @@ public class BpskDetector {
     /**
      * Given a 16bit, big endian, signed audio sample, convert it to short[] and apply filters.
      */
-    private short[] convertToSamples(final byte[] buffer, final int off, final int len) {
-        short[] samples = new short[len / 2];
+    private double[] convertToSamples(final byte[] buffer, final int off, final int len) {
+        double[] samples = new double[len / 2];
 
         /* Convert the incoming buffer into an array of samples. */
         for (int i = 0; i < samples.length; ++i) {
             /* Convert the raw bytes to a sample. */
-            samples[i] = (short)(((buffer[off+i*2] << 8) & 0xff00) | (buffer[off+i*2+1] & 0xff));
+            samples[i] = (double)(((buffer[off+i*2] << 8) & 0xff00) | (buffer[off+i*2+1] & 0xff));
 
             /* Apply a moving average filter to that sample. */
             samples[i] = movingAverageFilter.process(samples[i]);
@@ -182,7 +182,7 @@ public class BpskDetector {
     public void detectSignal(final byte[] data, final int off, final int len, final OutputStream os)
         throws IOException
     {
-        final short samples[] = convertToSamples(data, off, len);
+        final double samples[] = convertToSamples(data, off, len);
 
         int samplesOff = 0;
 

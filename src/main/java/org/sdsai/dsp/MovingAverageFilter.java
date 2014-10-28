@@ -8,7 +8,7 @@ public final class MovingAverageFilter {
     /**
      * Prevous n samples.
      */
-    private short samples[];
+    private double samples[];
 
     /**
      * The sum of the average before it is finally divided.
@@ -26,7 +26,7 @@ public final class MovingAverageFilter {
      * @param samples The number of samples to use for the moving average.
      */
     public MovingAverageFilter(final int samples) {
-        this.samples = new short[samples];
+        this.samples = new double[samples];
         this.partialResult = 0;
         this.current = 0;
     }
@@ -43,13 +43,13 @@ public final class MovingAverageFilter {
      * @param sampleRate The sample rate in samples per second.
      */
     public MovingAverageFilter(final double hz, final int sampleRate) {
-        this.samples = new short[(int)(Math.floor(sampleRate / hz / 2))];
+        this.samples = new double[(int)(Math.floor(sampleRate / hz / 2))];
     }
 
     /**
      * Filter a single sample.
      */
-    public final short process(final short data) {
+    public final double process(final double data) {
 
         /* Remove previous data value from it. */
         partialResult -= samples[current];
@@ -65,6 +65,6 @@ public final class MovingAverageFilter {
         }
 
         /* Return final result. */
-        return (short) (partialResult / (double)samples.length);
+        return (partialResult / (double)samples.length);
     }
 }

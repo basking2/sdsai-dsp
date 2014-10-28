@@ -75,7 +75,7 @@ public final class Goertzel {
      * @param samples The array of 16 bit, signed audio samples.
      * @param len The number of samples to process, staring at {@code samples[0]}.
      */
-    private final void process(final short[] samples, final int off, final int len) {
+    private final void process(final double[] samples, final int off, final int len) {
         for (int i = off; i < off+len; ++i) {
             q0 = coefficient * q1 - q2 + samples[i];
             q2 = q1;
@@ -123,7 +123,7 @@ public final class Goertzel {
      * @return The number of samples processed from the given buffer to yeild a result or -1 if
      *         more samples are still needed.
      */
-    public final int process(final short[] samples, final int off, final int len, final Result result) {
+    public final int process(final double[] samples, final int off, final int len, final Result result) {
         /* Now many samples are left to compute? */
         final int n_left = N-n;
 
@@ -154,7 +154,7 @@ public final class Goertzel {
      * @return The number of samples processed from the given buffer to yeild a result or -1 if
      *         more samples are still needed.
      */
-    public final int process(final short[] samples, final int off, final int len, final FastResult result) {
+    public final int process(final double[] samples, final int off, final int len, final FastResult result) {
         /* Now many samples are left to compute? */
         final int n_left = N-n;
 
