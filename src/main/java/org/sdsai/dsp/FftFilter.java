@@ -57,20 +57,6 @@ public class FftFilter
 
         this.filterKernelReal = Arrays.copyOf(real, filterKernelSampleCount / 2);
         this.filterKernelImg  = Arrays.copyOf(img,  filterKernelSampleCount / 2);
-
-        /* Find max. */
-        double mx = 0;
-        for (int i = 0; i < this.filterKernelReal.length; ++i) {
-            double t = Math.abs(DspUtils.magnitude(filterKernelImg[i], filterKernelReal[i]));
-            if (t > mx) {
-                mx = t;
-            }
-        }
-
-        for (int i = 0; i < this.filterKernelReal.length; ++i) {
-            filterKernelReal[i] /= (mx*2);
-            filterKernelImg[i]  /= (mx*2);
-        }
         /* End Filter Kernel Initialization. */
     }
 
@@ -81,22 +67,7 @@ public class FftFilter
         final int    overlap
     )
     {
-        /* Set simple, unprocessed values. */
-        this.filterKernelSampleCount = signalSize;
-        this.sampleCount             = filterKernelSampleCount - overlap;
-        this.overlap                 = new double[overlap];
-        this.filterKernelReal        = new double[filterKernelSampleCount/2];
-        this.filterKernelImg         = new double[filterKernelSampleCount/2];
-
-
-        for (int i = 0; i < filterKernelSampleCount/2; ++i) {
-            filterKernelReal[i] = -0.01;
-            filterKernelImg[i] = -0.01;
-        }
-
-        int i = DspUtils.fftHzToIdx(hz, sampleRate, signalSize);
-        this.filterKernelReal[i]     = 0.6;
-        this.filterKernelImg[i]      = 0.6;
+        this(new SignalGenerator(hz, sampleRate, 1.0), signalSize, overlap);
     }
 
     /**
@@ -107,21 +78,15 @@ public class FftFilter
     }
 
     public void filter(final double[] signal) {
-        final double[] real = new double[filterKernelSampleCount];
-        final double[] img  = new double[filterKernelSampleCount];
-
         if (signal.length != sampleCount()) {
             throw new IllegalArgumentException("Signal length must be " + sampleCount());
         }
 
-        /* Load overlap into real buffer. */
-        for (int i = 0; i < overlap.length; ++i) {
-            real[i] = overlap[i];
-        }
+        final double[] real = new double[filterKernelSampleCount];
+        final double[] img  = new double[filterKernelSampleCount];
 
-        /* Load signal into real buffer. */
         for (int i = 0; i < signal.length; ++i) {
-            real[i + overlap.length] = signal[i];
+            real[i] = signal[i];
         }
 
         /* Do the convolution. */
@@ -143,7 +108,7 @@ public class FftFilter
         }
 
         /* Record the overlap of the next iteration. */
-        for (int i = 0, offset = real.length - overlap.length; i < overlap.length; ++i) {
+        for (int i = 0, offset = signal.length - overlap.length; i < overlap.length; ++i) {
             overlap[i] = real[offset + i];
         }
 

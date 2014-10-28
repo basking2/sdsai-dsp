@@ -12,7 +12,7 @@ public class SignalGenerator {
     private double hz;
     private long sample;
     private double w;
-    private short amplitude;
+    private double amplitude;
 
     /**
      * Constructor.
@@ -21,7 +21,7 @@ public class SignalGenerator {
      * @param sampleRate The sample rate.
      */
     public SignalGenerator(final double hz, final int sampleRate) {
-        this(hz, sampleRate, Short.MAX_VALUE);
+        this(hz, sampleRate, Double.MAX_VALUE);
     }
 
     /**
@@ -31,7 +31,7 @@ public class SignalGenerator {
      * @param sampleRate The sample rate.
      * @param amplitude What should the maximum amplitude be.
      */
-    public SignalGenerator(final double hz, final int sampleRate, final short amplitude) {
+    public SignalGenerator(final double hz, final int sampleRate, final double amplitude) {
         this.sampleRate = sampleRate;
         this.amplitude = amplitude;
         tune(hz);
