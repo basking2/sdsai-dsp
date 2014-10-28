@@ -1,5 +1,7 @@
 package org.sdsai.dsp;
 
+import java.util.Arrays;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -57,6 +59,10 @@ public class BpskDetector {
     private final Goertzel.Result signalDetectorResult;
 
     private MovingAverageFilter movingAverageFilter;
+
+    private FftFilter fftFilter;
+
+    private FftFilterStream fftFilterStream;
 
     /**
      * The number of signal samples necessary to do any work.
@@ -146,10 +152,12 @@ public class BpskDetector {
         this.binSize             = (int)(sampleRate / hz) * 2;
         this.signalDetector      = new Goertzel(hz, sampleRate, this.binSize);
         this.movingAverageFilter = new MovingAverageFilter(hz, sampleRate);
+        this.fftFilter           = new FftFilter(hz, sampleRate, 1024, 1024/3);
+        this.fftFilterStream     = new FftFilterStream(this.fftFilter);
     }
 
     /**
-     * Given a 16bit, big endian, signed audio sample, convert it to short[] and apply filters.
+     * Given a 16bit, big endian, signed audio sample, convert it to double[] and apply filters.
      */
     private double[] convertToSamples(final byte[] buffer, final int off, final int len) {
         double[] samples = new double[len / 2];
@@ -162,6 +170,17 @@ public class BpskDetector {
             /* Apply a moving average filter to that sample. */
             samples[i] = movingAverageFilter.process(samples[i]);
         }
+
+        // try
+        // {
+        //     int written = fftFilterStream.apply(samples);
+        //     if (written != samples.length) {
+        //         return Arrays.copyOf(samples, written);
+        //     }
+        // }
+        // catch (final IOException e) {
+        //     throw new RuntimeException(e);
+        // }
 
         return samples;
     }

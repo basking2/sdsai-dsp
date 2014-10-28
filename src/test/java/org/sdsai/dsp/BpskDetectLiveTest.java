@@ -51,7 +51,6 @@ public class BpskDetectLiveTest {
     }
 
     @Test
-    @Ignore
     public void readLivePskFileLinpsk() throws IOException, UnsupportedAudioFileException {
 
         final AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
