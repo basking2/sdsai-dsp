@@ -202,4 +202,13 @@ public final class DspUtils {
     {
         return index * sampleRate / bufferSize;
     }
+
+
+    /**
+     * The compliment of {@link #fftIdxToHz(int, int, int)}.
+     */
+    public static int fftHzToIdx(final double hz, final int sampleRate, final int bufferSize)
+    {
+        return (int)(hz * bufferSize / sampleRate);
+    }
 }
