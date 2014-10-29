@@ -154,38 +154,18 @@ public final class DspUtils {
 
     public static final void fft(final double[] real, final double[] img)
     {
-        final FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
-
-        final Complex[] c = fft.transform(real, TransformType.FORWARD);
-
-        int i = 0;
-        for (; i < c.length; ++i) {
-            real[i] = c[i].getReal();
-            img[i] = c[i].getImaginary();
-        }
-
-        for (; i < real.length; ++i) {
-            real[i] = 0;
-            img[i] = 0;
-        }
+        FastFourierTransformer.transformInPlace(
+            new double[][]{ real, img },
+            DftNormalization.STANDARD,
+            TransformType.FORWARD
+        );
     }
 
     public static final void ifft(final double[] real, final double[] img)
     {
-        final FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
+        final double[][] data = { real, img };
 
-        final Complex[] c = fft.transform(real, TransformType.INVERSE);
-
-        int i = 0;
-        for (; i < c.length; ++i) {
-            real[i] = c[i].getReal();
-            img[i] = c[i].getImaginary();
-        }
-
-        for (; i < real.length; ++i) {
-            real[i] = 0;
-            img[i] = 0;
-        }
+        FastFourierTransformer.transformInPlace(data, DftNormalization.STANDARD, TransformType.INVERSE);
     }
 
     /**
