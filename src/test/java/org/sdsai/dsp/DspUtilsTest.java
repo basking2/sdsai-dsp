@@ -4,6 +4,8 @@ import org.junit.Test;
 import org.junit.Ignore;
 import org.junit.Assert;
 
+import java.util.Arrays;
+
 public class DspUtilsTest
 {
     @Test
@@ -42,13 +44,15 @@ public class DspUtilsTest
         final int sampleRate = 32;
         final int hz   = 2;
         double[] signal = new double[1024];
+        double[] real;
         double[] img    = new double[signal.length];
 
         new SignalGenerator(hz, sampleRate, (short)100).read(signal);
 
         System.out.println("--- IFFT OUT DOUBLE --- ");
-        DspUtils.fft(signal, img);
-        DspUtils.ifft(signal, img);
+        real = Arrays.copyOf(signal, signal.length);
+        DspUtils.fft(real, img);
+        DspUtils.ifft(real, img);
 
         print(img, signal);
 
@@ -63,7 +67,7 @@ public class DspUtilsTest
         }
 
         for (int i = 0; i < signal.length; ++i) {
-            Assert.assertEquals(0.0, signal[i], 0.1);
+            Assert.assertEquals(signal[i], real[i], 0.1);
             Assert.assertEquals(0.0, img[i], 0.1);
         }
         System.out.println("hz = "+hz+" peak at "+maxidx +" of "+mag);

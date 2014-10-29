@@ -71,4 +71,5 @@ public class SignalGenerator {
             data[i] = readDouble();
         }
         return len;
-    }}
+    }
+}

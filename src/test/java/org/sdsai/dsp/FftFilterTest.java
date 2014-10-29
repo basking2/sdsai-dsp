@@ -4,10 +4,12 @@ import java.util.Arrays;
 
 import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Assert;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.AudioFormat;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -23,7 +25,7 @@ public class FftFilterTest {
         final SignalGenerator sg = new SignalGenerator(hz, sampleRate, 10);
         final double[] real      = new double[128];
         final double[] img       = new double[real.length];
-        final FftFilter filter   = new FftFilter(new SignalGenerator(hz, sampleRate, 0.5), 64, 10);
+        final FftFilter filter   = new FftFilter(hz, sampleRate);
 
         sg.read(real);
 
@@ -51,5 +53,63 @@ public class FftFilterTest {
                 DspUtils.magnitude(img2[i], real2[i])
             );
         }
+    }
+
+    @Test
+    public void writeToSpeakers() throws IOException, LineUnavailableException
+    {
+        final double                hz         = 700;
+        final int                   sampleRate = 11025;
+        final SignalGenerator       sg         = new SignalGenerator(hz, sampleRate, 2);
+        final double[]              buffer     = new double[sampleRate*5];
+        final FftFilterStream       filter     = new FftFilterStream(new FftFilter(700, sampleRate));
+        final byte[]                byteBuffer = new byte[buffer.length * 2];
+
+        sg.read(buffer);
+
+        final int writtenBytes = filter.apply(buffer);
+
+        System.out.println("Bytes written "+writtenBytes+ " of "+buffer.length);
+
+        for (int i = 0; i < buffer.length; ++i) {
+            final short s = (short) (buffer[i] * 1000);
+            byteBuffer[2*i]   = (byte)((s>>>8)&0xff);
+            byteBuffer[2*i+1] = (byte)((s)&0xff);
+        }
+
+        /* Audio. */
+        final AudioFormat af = new AudioFormat(sampleRate, 16, 1, true, true);
+        final SourceDataLine sdl  = AudioSystem.getSourceDataLine(af);
+        sdl.open(af);
+        sdl.start();
+        sdl.write(byteBuffer, 0, byteBuffer.length);
+        sdl.drain();
+        sdl.stop();
+        sdl.close();
+
+        new java.io.FileOutputStream("start.raw").write(byteBuffer);
+    }
+
+    @Test
+    public void book() throws IOException {
+        final double[] h = { 1, 2, 1 };
+        final double[] x = { 1, 2, 3, 4, 5, 6};
+        final double[] r = { 1, 4, 8, 12, 16, 20, 17, 6 };
+
+        final FftFilter f = new FftFilter(h);
+        FftFilterStream filter = new FftFilterStream(f);
+
+        System.out.println("SIZE: "+f.sampleCount());
+
+        f.filter(x);
+        for (int i = 0; i < x.length; ++i) {
+            System.out.println("1: "+x[i]+"\t"+r[i]);
+            Assert.assertEquals(x[i], r[i], 0.1);
+        }
+        for (int i = x.length; i < r.length; ++i) {
+            System.out.println("1: "+f.getOverlap()[i-x.length] +"\t"+r[i]);
+            Assert.assertEquals(f.getOverlap()[i-x.length], r[i], 0.1);
+        }
+
     }
 }

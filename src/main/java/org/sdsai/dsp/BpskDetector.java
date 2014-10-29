@@ -152,7 +152,7 @@ public class BpskDetector {
         this.binSize             = (int)(sampleRate / hz) * 2;
         this.signalDetector      = new Goertzel(hz, sampleRate, this.binSize);
         this.movingAverageFilter = new MovingAverageFilter(hz, sampleRate);
-        this.fftFilter           = new FftFilter(hz, sampleRate, 1024, 1024/3);
+        this.fftFilter           = new FftFilter(hz, sampleRate);
         this.fftFilterStream     = new FftFilterStream(this.fftFilter);
     }
 
