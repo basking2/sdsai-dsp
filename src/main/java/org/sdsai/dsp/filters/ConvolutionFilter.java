@@ -1,15 +1,19 @@
-package org.sdsai.dsp;
+package org.sdsai.dsp.filters;
 
 import java.util.Arrays;
+
+import org.sdsai.dsp.DspUtils;
+import org.sdsai.dsp.SignalGenerator;
+
 /**
  * A filter based on the Fast Fourier transform.
  *
  * This class uses double to represent the signal points.
  * This almost certainly differs from how a sound card will provide you data.
  */
-public class FftFilter
-{
-    /**
+public class ConvolutionFilter {
+
+   /**
      * Size of the filter kernel.
      * This is less than {@link #kreal} and {@link #kimg}.
      */
@@ -30,12 +34,19 @@ public class FftFilter
 
     double[] overlap;
 
-    public FftFilter(
-        final double hz,
-        final int    sampleRate
-    )
+    public ConvolutionFilter(final FilterKernel filterKernel)
     {
-        initFilterKernelLowPass(hz, sampleRate);
+        filterKernelSize = filterKernel.getSize();
+
+        for (dftSize = 1; dftSize < filterKernelSize; dftSize *= 2)
+            ;
+
+        kreal = new double[dftSize*2];
+        kimg  = new double[dftSize*2];
+
+        filterKernel.apply(kreal);
+
+        DspUtils.fft(kreal, kimg);
 
         /* Check the side effects of the previous init routine. */
         assert dftSize > 0;
@@ -46,55 +57,6 @@ public class FftFilter
         /* Set simple, unprocessed values. */
         this.sampleCount = 2 * dftSize - (filterKernelSize - 1);
         this.overlap     = new double[filterKernelSize - 1];
-    }
-
-    public FftFilter(
-        double[] filterKernel
-    )
-    {
-        filterKernelSize = filterKernel.length;
-        for (dftSize = 1; dftSize < filterKernel.length; dftSize *= 2);
-
-        kreal = new double[dftSize * 2];
-        kimg  = new double[dftSize * 2];
-        for (int i = 0; i < filterKernelSize; ++i) {
-            kreal[i] = filterKernel[i];
-        }
-
-        DspUtils.fft(kreal, kimg);
-
-        this.sampleCount = 2 * dftSize - (filterKernelSize - 1);
-        this.overlap     = new double[filterKernelSize - 1];
-    }
-
-    private void initFilterKernelLowPass(final double hz, final int sampleRate) {
-        filterKernelSize = (int) (sampleRate / hz / 2);
-
-        for (dftSize = 1; dftSize < filterKernelSize; dftSize *= 2)
-            ;
-
-        kreal = new double[dftSize*2];
-        kimg  = new double[dftSize*2];
-        for (int i = 0; i < filterKernelSize; ++i) {
-            kreal[i] = -0.1;
-        }
-        kreal[filterKernelSize / 2] = 2;
-
-        DspUtils.fft(kreal, kimg);
-    }
-
-    private void initFilterKernelHighPass(final double hz, final int sampleRate) {
-
-        filterKernelSize = (int) (sampleRate / hz / 2);
-        for (dftSize = 1; dftSize < filterKernelSize; dftSize *= 2)
-            ;
-
-        kreal = new double[dftSize*2];
-        kimg  = new double[dftSize*2];
-        /* Put 1/2 a cycle of signal into `real`. */
-        new SignalGenerator(hz, sampleRate, 1).read(kreal, 0, filterKernelSize);
-
-        DspUtils.fft(kreal, kimg);
     }
 
     /**

@@ -1,5 +1,10 @@
 package org.sdsai.dsp;
 
+import org.sdsai.dsp.filters.ConvolutionFilter;
+import org.sdsai.dsp.filters.ConvolutionFilterStream;
+import org.sdsai.dsp.filters.FilterKernelFactory;
+import org.sdsai.dsp.filters.MovingAverageFilter;
+
 import java.util.Arrays;
 
 import java.io.ByteArrayOutputStream;
@@ -60,9 +65,9 @@ public class BpskDetector {
 
     private MovingAverageFilter movingAverageFilter;
 
-    private FftFilter fftFilter;
+    private ConvolutionFilter filter;
 
-    private FftFilterStream fftFilterStream;
+    private ConvolutionFilterStream filterStream;
 
     /**
      * The number of signal samples necessary to do any work.
@@ -152,8 +157,8 @@ public class BpskDetector {
         this.binSize             = (int)(sampleRate / hz) * 2;
         this.signalDetector      = new Goertzel(hz, sampleRate, this.binSize);
         this.movingAverageFilter = new MovingAverageFilter(hz, sampleRate);
-        this.fftFilter           = new FftFilter(hz, sampleRate);
-        this.fftFilterStream     = new FftFilterStream(this.fftFilter);
+        this.filter              = new ConvolutionFilter(new FilterKernelFactory(sampleRate).lowPass(hz));
+        this.filterStream        = new ConvolutionFilterStream(this.filter);
     }
 
     /**

@@ -1,4 +1,7 @@
-package org.sdsai.dsp;
+package org.sdsai.dsp.filters;
+
+import org.sdsai.dsp.SignalGenerator;
+import org.sdsai.dsp.DspUtils;
 
 import java.util.Arrays;
 
@@ -14,7 +17,7 @@ import javax.sound.sampled.AudioFormat;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 
-public class FftFilterTest {
+public class ConvolutionFilterTest {
 
     @Test
     public void testFft() throws IOException {
@@ -25,7 +28,7 @@ public class FftFilterTest {
         final SignalGenerator sg = new SignalGenerator(hz, sampleRate, 10);
         final double[] real      = new double[128];
         final double[] img       = new double[real.length];
-        final FftFilter filter   = new FftFilter(hz, sampleRate);
+        final ConvolutionFilter filter = new ConvolutionFilter(new FilterKernelFactory(sampleRate).lowPass(hz));
 
         sg.read(real);
 
@@ -62,7 +65,7 @@ public class FftFilterTest {
         final int                   sampleRate = 11025;
         final SignalGenerator       sg         = new SignalGenerator(hz, sampleRate, 2);
         final double[]              buffer     = new double[sampleRate*5];
-        final FftFilterStream       filter     = new FftFilterStream(new FftFilter(700, sampleRate));
+        final ConvolutionFilterStream filter = new ConvolutionFilterStream(new FilterKernelFactory(sampleRate).highPass(700));
         final byte[]                byteBuffer = new byte[buffer.length * 2];
 
         sg.read(buffer);
@@ -96,8 +99,8 @@ public class FftFilterTest {
         final double[] x = { 1, 2, 3, 4, 5, 6};
         final double[] r = { 1, 4, 8, 12, 16, 20, 17, 6 };
 
-        final FftFilter f = new FftFilter(h);
-        FftFilterStream filter = new FftFilterStream(f);
+        final ConvolutionFilter f = new ConvolutionFilter(new FilterKernelRaw(h));
+        ConvolutionFilterStream filter = new ConvolutionFilterStream(f);
 
         System.out.println("SIZE: "+f.sampleCount());
 

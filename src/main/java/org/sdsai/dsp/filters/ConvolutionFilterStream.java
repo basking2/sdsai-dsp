@@ -1,17 +1,17 @@
-package org.sdsai.dsp;
+package org.sdsai.dsp.filters;
 
 import java.io.IOException;
 import java.io.Closeable;
 
 /**
- * A class that wraps {@link FftFilter} into a streaming API.
+ * A class that wraps {@link ConvolutionFilter} into a streaming API.
  *
  * This does not implement any part of {@code java.io} because
  * this class operates on doubles, not bytes.
  */
-public class FftFilterStream implements Closeable {
+public class ConvolutionFilterStream implements Closeable {
 
-    private FftFilter filter;
+    private ConvolutionFilter filter;
 
     private double[] buffer;
 
@@ -19,9 +19,13 @@ public class FftFilterStream implements Closeable {
 
     private boolean closed;
 
-    public FftFilterStream(final FftFilter filter) {
+    public ConvolutionFilterStream(final ConvolutionFilter filter) {
         setFilter(filter);
         closed = false;
+    }
+
+    public ConvolutionFilterStream(final FilterKernel filterKernel) {
+        this(new ConvolutionFilter(filterKernel));
     }
 
     /**
@@ -152,13 +156,13 @@ public class FftFilterStream implements Closeable {
         return bufferFill == buffer.length;
     }
 
-    public void setFilter(final FftFilter filter) {
+    public void setFilter(final ConvolutionFilter filter) {
         this.filter     = filter;
         this.buffer     = new double[filter.sampleCount()];
         this.bufferFill = 0;
     }
 
-    public FftFilter getFilter() {
+    public ConvolutionFilter getFilter() {
         return this.filter;
     }
 

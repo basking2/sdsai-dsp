@@ -1,4 +1,4 @@
-package org.sdsai.dsp;
+package org.sdsai.dsp.filters;
 
 /**
  * A filter based on the moving avarge of samples.
