@@ -19,10 +19,10 @@ public class FilterKernelFactory {
         this.sampleRate = sampleRate;
     }
 
-    public FilterKernel lowPass(final double hz) {
+    public FilterKernel lowPass(final double hz, final double peak, final double trough, final double cycles) {
         return new FilterKernel() {
 
-            final int length = (int) (sampleRate / hz / 2);
+            final int length = (int) (sampleRate / hz * cycles);
 
             @Override
             public int getSize() {
@@ -32,17 +32,30 @@ public class FilterKernelFactory {
             @Override
             public void apply(final double[] buffer) {
                 for (int i = 0; i < length; ++i) {
-                    buffer[i] = -0.1;
+                    if (i % (length / 2) == 0) {
+                        buffer[length / 2] = peak;
+                    }
+                    else {
+                        buffer[i] = trough;
+                    }
                 }
-                buffer[length / 2] = 2;
             }
         };
     }
 
+    public FilterKernel lowPass(final double hz)
+    {
+        return lowPass(hz, 4.0, -0.1, 0.5);
+    }
+
     public FilterKernel highPass(final double hz) {
+        return highPass(hz, 1, 0.5);
+    }
+
+    public FilterKernel highPass(final double hz, final int amplitude, final double cycles) {
         return new FilterKernel() {
 
-            final int length = (int) (sampleRate / hz / 2);
+            final int length = (int) (sampleRate / hz * cycles);
 
             @Override
             public int getSize() {
@@ -52,7 +65,7 @@ public class FilterKernelFactory {
             @Override
             public void apply(final double[] buffer) {
                 /* Put 1/2 a cycle of signal into `real`. */
-                new SignalGenerator(hz, sampleRate, 1).read(buffer, 0, length);
+                new SignalGenerator(hz, sampleRate, amplitude).read(buffer, 0, length);
             }
         };
     }

@@ -59,6 +59,7 @@ public class ConvolutionFilterTest {
     }
 
     @Test
+    @Ignore
     public void writeToSpeakers() throws IOException, LineUnavailableException
     {
         final double                hz         = 700;
@@ -94,6 +95,94 @@ public class ConvolutionFilterTest {
     }
 
     @Test
+    public void attenuateHigh() throws IOException {
+        final int                   sampleRate = 44100;
+        final SignalGenerator       sg1        = new SignalGenerator(880, sampleRate, 1);
+        final SignalGenerator       sg2        = new SignalGenerator(440, sampleRate, 1);
+        final double[]              buffer1     = new double[sampleRate*5];
+        final double[]              buffer2     = new double[sampleRate*5];
+        final ConvolutionFilterStream filter =
+            new ConvolutionFilterStream(
+                new FilterKernelFactory(sampleRate).highPass(700));
+        final byte[]                byteBuffer = new byte[buffer1.length * 2];
+
+        /* Generate 2 signals. */
+        sg1.read(buffer1);
+        sg2.read(buffer2);
+
+        /* Mix them. */
+        for (int i = 0; i < buffer1.length; ++i) {
+            buffer1[i] += buffer2[i];
+            buffer2[i] = buffer1[i];
+        }
+
+        /* Filter buffer 2. */
+        final int writtenBytes = filter.apply(buffer2);
+
+        double[] real1 = Arrays.copyOf(buffer1, 1024);
+        double[] img1 = new double[real1.length];
+
+        double[] real2 = Arrays.copyOf(buffer2, 1024);
+        double[] img2 = new double[real2.length];
+
+        DspUtils.fft(real1, img1);
+        DspUtils.fft(real2, img2);
+
+        for (int i = 0; i < 30; ++i) {
+            System.out.println(
+                "attenuate880: "+
+                DspUtils.fftIdxToHz(i, sampleRate, real1.length) + ":\t"+
+                DspUtils.magnitude(img1[i], real1[i]) + "\t" +
+                DspUtils.magnitude(img2[i], real2[i])
+            );
+        }
+    }
+
+        @Test
+    public void attenuateLow() throws IOException {
+        final int                   sampleRate = 44100;
+        final SignalGenerator       sg1        = new SignalGenerator(880, sampleRate, 1);
+        final SignalGenerator       sg2        = new SignalGenerator(440, sampleRate, 1);
+        final double[]              buffer1    = new double[sampleRate*5];
+        final double[]              buffer2    = new double[sampleRate*5];
+        final ConvolutionFilterStream filter   =
+            new ConvolutionFilterStream(
+                new FilterKernelFactory(sampleRate).lowPass(700));
+        final byte[]                byteBuffer = new byte[buffer1.length * 2];
+
+        /* Generate 2 signals. */
+        sg1.read(buffer1);
+        sg2.read(buffer2);
+
+        /* Mix them. */
+        for (int i = 0; i < buffer1.length; ++i) {
+            buffer1[i] += buffer2[i];
+            buffer2[i] = buffer1[i];
+        }
+
+        /* Filter buffer 2. */
+        final int writtenBytes = filter.apply(buffer2);
+
+        double[] real1 = Arrays.copyOf(buffer1, 1024);
+        double[] img1 = new double[real1.length];
+
+        double[] real2 = Arrays.copyOf(buffer2, 1024);
+        double[] img2 = new double[real2.length];
+
+        DspUtils.fft(real1, img1);
+        DspUtils.fft(real2, img2);
+
+        for (int i = 0; i < 30; ++i) {
+            System.out.println(
+                "attenuate440: "+
+                DspUtils.fftIdxToHz(i, sampleRate, real1.length) + ":\t"+
+                DspUtils.magnitude(img1[i], real1[i]) + "\t" +
+                DspUtils.magnitude(img2[i], real2[i])
+            );
+        }
+    }
+
+    @Test
     public void book() throws IOException {
         final double[] h = { 1, 2, 1 };
         final double[] x = { 1, 2, 3, 4, 5, 6};
@@ -113,6 +202,5 @@ public class ConvolutionFilterTest {
             System.out.println("1: "+f.getOverlap()[i-x.length] +"\t"+r[i]);
             Assert.assertEquals(f.getOverlap()[i-x.length], r[i], 0.1);
         }
-
     }
 }
