@@ -208,20 +208,26 @@ public class BpskDetector {
     {
         final double samples[] = convertToSamples(data, off, len);
 
-        int samplesOff = 0;
+        detectSignal(samples, 0, samples.length, os);
+    }
+
+
+    public void detectSignal(final double[] samples, int off, final int len, final OutputStream os)
+        throws IOException
+    {
 
         do {
-            final int sampled = signalDetector.process(samples, samplesOff, samples.length-samplesOff, signalDetectorResult);
+            final int sampled = signalDetector.process(samples, off, len-off, signalDetectorResult);
 
             /* Sampled = -1, the no result is available. Just update the offsets. */
             if (sampled == -1) {
-                sampleCount += samples.length - samplesOff;
-                samplesOff   = samples.length;
+                sampleCount += len - off;
+                off          = len;
             }
             /* Otherwise, a result is available. */
             else {
                 sampleCount += sampled;
-                samplesOff  += sampled;
+                off         += sampled;
 
                 // FIXME - leave out until the system is a bit more stable.
                 // final double magnitude = signalDetectorResult.magnitude();
@@ -264,9 +270,9 @@ public class BpskDetector {
                 }
             }
 
-        } while (samplesOff < samples.length);
-    }
+        } while (off< len);
 
+    }
     /**
      * Detect a signal.
      *
